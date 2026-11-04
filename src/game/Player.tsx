@@ -77,8 +77,8 @@ export function Player() {
       ccd
       userData={{ kind: 'player' }}
       onIntersectionEnter={({ other }) => {
-        const ud = other.rigidBodyObject?.userData as { kind?: string; id?: number } | undefined
-        if (ud?.kind === 'enemyShot' && ud.id != null) hitPlayer(ud.id)
+        const ud = other.rigidBodyObject?.userData as { kind?: string; id?: number; deflected?: boolean } | undefined
+        if (ud?.kind === 'enemyShot' && ud.id != null && !ud.deflected) hitPlayer(ud.id)
       }}
     >
       <CuboidCollider

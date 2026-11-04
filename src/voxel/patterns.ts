@@ -149,3 +149,19 @@ export const LASER: Pattern = {
 export function patternSize(p: Pattern) {
   return { w: Math.max(...p.rows.map((r) => r.length)), h: p.rows.length }
 }
+
+/** 8-bit umbrella (side view) opened above the saucer. */
+export const UMBRELLA: Pattern = {
+  palette: { r: '#ff2e4c', w: '#ffffff', k: '#9aa0a8' },
+  rows: [
+    '.......rwr.......',
+    '.....rrwwwrr.....',
+    '...rrrwwwwwrrr...',
+    '.rrrrwwwwwwwrrrr.',
+    'rrrrrwwwwwwwrrrrr',
+    'r.r.r.r.k.r.r.r.r',
+    '........k........',
+    '........k........',
+    '.......kk........',
+  ],
+}

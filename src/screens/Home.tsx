@@ -1,29 +1,9 @@
 import { useEffect, useRef } from 'react'
-import { PixelSprite } from '../components/PixelSprite'
 import { useGame } from '../game/store'
 import { calibrate, input, readTilt, sensorAlive, startInput } from '../input'
 import { pad } from '../storage'
-import type { Pattern } from '../voxel/patterns'
 
 const TITLE = 'PARANOID'
-
-/** Grey flying saucer used as the PLAY button. */
-const PLAY_SAUCER: Pattern = {
-  palette: { d: '#cfd8de', w: '#ffffff', h: '#a9b0b7', m: '#7f868d', n: '#5c6268', y: '#ffffff', k: '#3a3e43', b: '#9fe8ff' },
-  rows: [
-    '........ddddd........',
-    '......ddwwddddd......',
-    '.....dwddddddddd.....',
-    '...hhhhhhhhhhhhhhh...',
-    '.hhhhhhhhhhhhhhhhhhh.',
-    'mmymmmymmmymmmymmmymm',
-    '.nnnnnnnnnnnnnnnnnnn.',
-    '...nnnnnnnnnnnnnnn...',
-    '.......kkkkkkk.......',
-    '......b...b...b......',
-    '.....b....b....b.....',
-  ],
-}
 
 // Warm up the game chunk (Rapier) while the player looks at the home screen.
 const preload = () => void import('./Game')
@@ -90,17 +70,14 @@ export function Home() {
         HI-SCORE <b>{pad(hi)}</b>
       </p>
 
-      <button className="play intro-drop" onClick={play} aria-label="Play">
-        <PixelSprite pattern={PLAY_SAUCER} scale={12} className="play-sprite">
-          <text x="10.5" y="5.3" textAnchor="middle" dominantBaseline="middle" className="play-text">
-            PLAY
-          </text>
-        </PixelSprite>
+      <button className="pixel-btn play-btn intro-drop" onClick={play}>
+        PLAY
       </button>
 
       <div className="menu-info intro">
         <TiltMeter />
         <p>TILT TO MOVE · TAP TO FIRE</p>
+        <p>SWIPE UP: UMBRELLA</p>
         <p className="dim">3 HITS = 1 LIFE</p>
       </div>
     </div>

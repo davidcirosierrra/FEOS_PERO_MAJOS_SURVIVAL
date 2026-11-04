@@ -6,8 +6,11 @@ import {
   INVULN_MS,
   LIVES,
   RESPAWN_INVULN_MS,
+  SCORE_PER_DEFLECT,
   SCORE_PER_KILL,
   STAGES,
+  UMBRELLA_COOLDOWN_MS,
+  UMBRELLA_MS,
   wave as waveCfg,
 } from './config'
 
@@ -39,6 +42,8 @@ type State = {
   banner: string | null
   invulnUntil: number
   lastShot: number
+  umbrellaOpen: boolean
+  umbrellaReadyAt: number
   enemies: Enemy[]
   playerShots: Shot[]
   enemyShots: FoodShot[]
@@ -49,6 +54,8 @@ type State = {
   nextWave: () => void
   clearBanner: () => void
   firePlayer: () => void
+  openUmbrella: () => void
+  deflect: (shotId: number) => void
   removePlayerShot: (id: number) => void
   enemyFire: (x: number, y: number) => void
   removeEnemyShot: (id: number) => void
@@ -78,6 +85,8 @@ export const useGame = create<State>((set, get) => ({
   banner: null,
   invulnUntil: 0,
   lastShot: 0,
+  umbrellaOpen: false,
+  umbrellaReadyAt: 0,
   enemies: [],
   playerShots: [],
   enemyShots: [],
@@ -98,6 +107,8 @@ export const useGame = create<State>((set, get) => ({
       banner: null,
       invulnUntil: 0,
       lastShot: 0,
+      umbrellaOpen: false,
+      umbrellaReadyAt: 0,
       enemies: [],
       playerShots: [],
       enemyShots: [],
@@ -136,6 +147,24 @@ export const useGame = create<State>((set, get) => ({
     const now = performance.now()
     if (now - s.lastShot < STAGES[s.stage].fireCooldown) return
     set({ lastShot: now, playerShots: [...s.playerShots, { id: id(), x: playerState.x, y: field.playerY + 0.7 }] })
+  },
+
+  openUmbrella: () => {
+    const s = get()
+    const now = performance.now()
+    if (s.gameOver || s.screen !== 'game' || now < s.umbrellaReadyAt) return
+    const run = s.runId
+    vibrate(15)
+    set({ umbrellaOpen: true, umbrellaReadyAt: now + UMBRELLA_COOLDOWN_MS })
+    setTimeout(() => {
+      if (get().runId === run) set({ umbrellaOpen: false })
+    }, UMBRELLA_MS)
+  },
+
+  deflect: (sid) => {
+    if (!get().enemyShots.some((e) => e.id === sid)) return
+    vibrate(12)
+    set((s) => ({ score: s.score + SCORE_PER_DEFLECT * Math.max(1, s.wave) }))
   },
 
   removePlayerShot: (sid) => set((s) => ({ playerShots: s.playerShots.filter((p) => p.id !== sid) })),

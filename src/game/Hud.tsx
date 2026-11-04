@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { sensorAlive } from '../input'
 import { PixelSprite } from '../components/PixelSprite'
 import { pad } from '../storage'
 import { ALIEN_ICON } from '../voxel/patterns'
-import { HITS_PER_LIFE } from './config'
+import { HITS_PER_LIFE, UMBRELLA_COOLDOWN_MS } from './config'
 import { useGame } from './store'
 
 export function Hud() {
@@ -42,6 +42,7 @@ export function Hud() {
             <i key={i} className={i < HITS_PER_LIFE - stage ? 'on' : ''} />
           ))}
         </div>
+        <UmbrellaMeter />
         <div className="wave-n">W{wave}</div>
       </div>
     </div>
@@ -77,4 +78,31 @@ function SensorWarning() {
     return () => clearInterval(id)
   }, [])
   return missing ? <div className="sensor-warn blink">NO TILT SENSOR</div> : null
+}
+
+/** Umbrella cooldown: fills up, lit when ready (updated without re-rendering). */
+function UmbrellaMeter() {
+  const bar = useRef<HTMLElement>(null)
+  const box = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    let raf = 0
+    const tick = () => {
+      const { umbrellaReadyAt } = useGame.getState()
+      const left = Math.max(0, umbrellaReadyAt - performance.now())
+      const k = 1 - Math.min(1, left / UMBRELLA_COOLDOWN_MS)
+      if (bar.current) bar.current.style.width = `${k * 100}%`
+      box.current?.classList.toggle('ready', left <= 0)
+      raf = requestAnimationFrame(tick)
+    }
+    tick()
+    return () => cancelAnimationFrame(raf)
+  }, [])
+  return (
+    <div ref={box} className="umb">
+      <span className="label">UMB</span>
+      <span className="umb-track">
+        <i ref={bar} />
+      </span>
+    </div>
+  )
 }

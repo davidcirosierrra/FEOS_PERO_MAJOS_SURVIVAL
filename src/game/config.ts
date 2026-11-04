@@ -17,7 +17,7 @@ export const STAGES = [
   { mass: 2, fireCooldown: 420 },
   { mass: 3.4, fireCooldown: 700 },
 ]
-export const THRUST = 40
+export const THRUST = 50
 export const BASE_DAMPING = 4.5
 
 export const PLAYER_SHOT_SPEED = 17
@@ -34,9 +34,14 @@ export const wave = (n: number) => ({
 })
 
 export const SCORE_PER_KILL = 100
+export const SCORE_PER_DEFLECT = 25
+
+/** Umbrella (swipe up): open time and cooldown measured from opening. */
+export const UMBRELLA_MS = 1400
+export const UMBRELLA_COOLDOWN_MS = 2600
 
 /** Collision groups. */
-const G = { player: 0, playerShot: 1, enemy: 2, enemyShot: 3, wall: 4, debris: 5 }
+const G = { player: 0, playerShot: 1, enemy: 2, enemyShot: 3, wall: 4, debris: 5, foodSolid: 6, umbrella: 7 }
 export const GROUPS = {
   player: interactionGroups(G.player, [G.enemyShot, G.wall]),
   playerShot: interactionGroups(G.playerShot, [G.enemy]),
@@ -44,4 +49,7 @@ export const GROUPS = {
   enemyShot: interactionGroups(G.enemyShot, [G.player]),
   wall: interactionGroups(G.wall, [G.player, G.debris]),
   debris: interactionGroups(G.debris, [G.wall]),
+  /** Solid part of thrown food: only bounces off the umbrella. */
+  foodSolid: interactionGroups(G.foodSolid, [G.umbrella]),
+  umbrella: interactionGroups(G.umbrella, [G.foodSolid]),
 }
