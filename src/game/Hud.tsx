@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+import { sensorAlive } from '../input'
 import { PixelSprite } from '../components/PixelSprite'
 import { pad } from '../storage'
 import { ALIEN_ICON } from '../voxel/patterns'
@@ -26,6 +28,7 @@ export function Hud() {
       </div>
 
       {banner && <div className="banner blink-slow">{banner}</div>}
+      <SensorWarning />
 
       <div className="hud-bottom">
         <div className="lives">
@@ -59,10 +62,19 @@ export function GameOver() {
         <button className="pixel-btn" onClick={startGame}>
           RETRY
         </button>
-        <button className="pixel-btn alt" onClick={() => setScreen('menu')}>
+        <button className="pixel-btn alt" onClick={() => setScreen('home')}>
           MENU
         </button>
       </div>
     </div>
   )
+}
+
+function SensorWarning() {
+  const [missing, setMissing] = useState(false)
+  useEffect(() => {
+    const id = setInterval(() => setMissing(!sensorAlive()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  return missing ? <div className="sensor-warn blink">NO TILT SENSOR</div> : null
 }

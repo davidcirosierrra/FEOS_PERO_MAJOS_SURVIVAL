@@ -3,8 +3,8 @@ import { CuboidCollider, RigidBody, type RapierRigidBody } from '@react-three/ra
 import { useRef } from 'react'
 import type * as THREE from 'three'
 import { patternSize, SHUTTLE } from '../voxel/patterns'
-import { Voxel } from '../voxel/Voxel'
-import { GROUPS, VOXEL, wave as waveCfg } from './config'
+import { Shuttle } from '../voxel/Voxel'
+import { GROUPS, SHUTTLE_VOXEL, wave as waveCfg } from './config'
 import { field, useGame, type Enemy as EnemyT } from './store'
 
 const { w, h } = patternSize(SHUTTLE)
@@ -35,12 +35,12 @@ export function Enemy({ e }: { e: EnemyT }) {
       y.current = field.halfH + 2
     }
     y.current += (slotY.current - y.current) * Math.min(1, dt * 2.2)
-    const halfSpan = field.halfW - (w * VOXEL) / 2
+    const halfSpan = field.halfW - (w * SHUTTLE_VOXEL) / 2
     const x = Math.max(-halfSpan, Math.min(halfSpan, e.slotX + Math.sin(t.current * 1.25 + e.phase) * cfg.sway))
     b.setNextKinematicTranslation({ x, y: y.current, z: 0 })
 
     if (visual.current) {
-      visual.current.rotation.y = Math.sin(t.current * 2 + e.phase) * 0.45
+      visual.current.rotation.y = Math.sin(t.current * 2 + e.phase) * 0.5
       visual.current.rotation.z = Math.cos(t.current * 1.25 + e.phase) * 0.12
     }
 
@@ -66,9 +66,9 @@ export function Enemy({ e }: { e: EnemyT }) {
         killEnemy(e.id, ud.id, p.x, p.y)
       }}
     >
-      <CuboidCollider args={[(w * VOXEL) / 2.2, (h * VOXEL) / 2.2, 0.3]} collisionGroups={GROUPS.enemy} />
+      <CuboidCollider args={[(w * SHUTTLE_VOXEL) / 2.2, (h * SHUTTLE_VOXEL) / 2.2, 0.3]} collisionGroups={GROUPS.enemy} />
       <group ref={visual}>
-        <Voxel pattern={SHUTTLE} size={VOXEL} depth={2} />
+        <Shuttle size={SHUTTLE_VOXEL} />
       </group>
     </RigidBody>
   )

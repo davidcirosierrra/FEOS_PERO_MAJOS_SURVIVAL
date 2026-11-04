@@ -83,11 +83,6 @@ body,
   opacity: 0;
   animation: drop 0.5s steps(5) forwards;
 }
-.title.small {
-  margin-top: 8dvh;
-  font-size: clamp(16px, 6vw, 28px);
-  cursor: pointer;
-}
 @keyframes drop {
   from {
     opacity: 1;
@@ -100,37 +95,79 @@ body,
   }
 }
 
-/* ---------- Splash ---------- */
-.splash {
+/* ---------- Home ---------- */
+.home {
   justify-content: space-between;
-  cursor: pointer;
 }
-.splash-bottom {
-  margin-bottom: 12dvh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 22px;
-  z-index: 1;
-  opacity: 0;
-  animation: appear 0.01s 2.5s forwards;
+.home .title {
+  margin-top: 9dvh;
 }
 .hi {
   font-size: 12px;
   color: var(--cyan);
+  z-index: 1;
 }
 .hi b {
   color: #fff;
   font-weight: normal;
 }
-.tap {
-  font-size: 12px;
-  color: var(--yellow);
+.intro {
+  opacity: 0;
+  animation: appear 0.01s 1.3s forwards;
+}
+.intro-drop {
+  opacity: 0;
+  animation:
+    saucer-in 0.9s 1s steps(9) forwards,
+    hover 1.6s 2s ease-in-out infinite;
 }
 @keyframes appear {
   to {
     opacity: 1;
   }
+}
+@keyframes saucer-in {
+  from {
+    opacity: 1;
+    transform: translateY(-70dvh);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.tilt-meter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--green);
+}
+.tilt-meter .warn {
+  color: var(--red);
+}
+.tilt-track {
+  position: relative;
+  width: 160px;
+  height: 10px;
+  border: 2px solid var(--dim);
+}
+.tilt-track::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--dim);
+}
+.tilt-track i {
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 6px;
+  margin-left: -4px;
+  background: var(--yellow);
 }
 
 .blink {
@@ -146,17 +183,13 @@ body,
 }
 
 /* ---------- Menu ---------- */
-.menu {
-  justify-content: space-between;
-}
 .play {
   background: none;
   border: none;
   padding: 0;
   cursor: pointer;
   z-index: 1;
-  animation: hover 1.6s ease-in-out infinite;
-  filter: drop-shadow(0 0 12px rgba(57, 255, 106, 0.45));
+  filter: drop-shadow(0 0 14px rgba(159, 232, 255, 0.35));
 }
 .play:active {
   transform: scale(0.94);
@@ -168,8 +201,8 @@ body,
 }
 .play-text {
   font-family: 'Press Start 2P', monospace;
-  font-size: 2.2px;
-  fill: var(--bg);
+  font-size: 2px;
+  fill: #2b2e32;
 }
 .play .px-y {
   animation: lights 0.6s steps(1) infinite;
@@ -184,7 +217,7 @@ body,
 }
 @keyframes lights {
   50% {
-    fill: var(--pink);
+    fill: #3a3e43;
   }
 }
 @keyframes beam {
@@ -193,7 +226,7 @@ body,
   }
 }
 .menu-info {
-  margin-bottom: 10dvh;
+  margin-bottom: 8dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -332,4 +365,12 @@ body,
   justify-content: center;
   font-size: 12px;
   color: var(--yellow);
+}
+.sensor-warn {
+  position: absolute;
+  top: 58px;
+  width: 100%;
+  text-align: center;
+  color: var(--red);
+  font-size: 9px;
 }

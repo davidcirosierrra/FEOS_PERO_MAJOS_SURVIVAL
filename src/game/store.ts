@@ -11,7 +11,7 @@ import {
   wave as waveCfg,
 } from './config'
 
-export type Screen = 'splash' | 'menu' | 'game'
+export type Screen = 'home' | 'game'
 
 export type Enemy = { id: number; slotX: number; slotY: number; phase: number; delay: number }
 export type Shot = { id: number; x: number; y: number }
@@ -66,7 +66,7 @@ const vibrate = (p: number | number[]) => {
 }
 
 export const useGame = create<State>((set, get) => ({
-  screen: 'splash',
+  screen: 'home',
   highScore: loadHighScore(),
   score: 0,
   lives: LIVES,
@@ -110,7 +110,7 @@ export const useGame = create<State>((set, get) => ({
     const perRow = Math.min(count, 4)
     const rows = Math.ceil(count / perRow)
     const spanX = field.halfW * 1.4
-    const top = field.halfH * 0.72
+    const top = field.halfH * 0.7
     const enemies: Enemy[] = []
     for (let i = 0; i < count; i++) {
       const row = Math.floor(i / perRow)
@@ -120,7 +120,7 @@ export const useGame = create<State>((set, get) => ({
       enemies.push({
         id: id(),
         slotX: x + (row % 2 ? 0.35 : -0.35),
-        slotY: top - row * 1.7 + (rows > 3 ? 0.5 : 0),
+        slotY: top - row * 2.5 + (rows > 2 ? 0.6 : 0),
         phase: Math.random() * Math.PI * 2,
         delay: i * 0.12,
       })
@@ -145,7 +145,7 @@ export const useGame = create<State>((set, get) => ({
     const cfg = waveCfg(s.wave)
     if (s.gameOver || s.enemyShots.length >= cfg.maxEnemyShots) return
     const kind = FOOD_KINDS[Math.floor(Math.random() * FOOD_KINDS.length)]
-    set({ enemyShots: [...s.enemyShots, { id: id(), x, y: y - 0.8, kind, speed: cfg.shotSpeed }] })
+    set({ enemyShots: [...s.enemyShots, { id: id(), x, y: y - 1.3, kind, speed: cfg.shotSpeed }] })
   },
 
   removeEnemyShot: (sid) => set((s) => ({ enemyShots: s.enemyShots.filter((p) => p.id !== sid) })),

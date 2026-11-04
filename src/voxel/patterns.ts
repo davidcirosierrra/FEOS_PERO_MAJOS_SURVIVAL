@@ -7,82 +7,108 @@ export type Pattern = {
   palette: Record<string, string>
 }
 
-const alienPalette = {
-  c: '#5ef6ff', // dome
+/** Grey flying-saucer palette (2D sprites: lives, PLAY button). */
+const saucerPalette = {
+  d: '#cfd8de', // glass dome
   w: '#ffffff', // dome highlight
-  g: '#39ff6a', // hull
-  G: '#169c3c', // hull shadow
-  y: '#fff35c', // lights
-  o: '#ff8a3d', // dents / burns
-  r: '#ff3d5a', // damage
+  h: '#a9b0b7', // upper hull
+  m: '#7f868d', // rim
+  n: '#5c6268', // lower hull
+  y: '#f4f7f9', // lights
+  k: '#3a3e43', // dark
 }
 
-/** Player ship, one pattern per damage stage (gets fatter with each hit). */
-export const ALIEN_STAGES: Pattern[] = [
-  {
-    palette: alienPalette,
-    rows: [
-      '...ccccc...',
-      '..cwccccc..',
-      '.ggggggggg.',
-      'gGgGgGgGgGg',
-      '.ggggggggg.',
-      '..y..y..y..',
-    ],
-  },
-  {
-    palette: alienPalette,
-    rows: [
-      '....ccccc....',
-      '...cwccccc...',
-      '.ggggggggggg.',
-      'ggGggGggGggGg',
-      'ggggoggggoggg',
-      '.ggggggggggg.',
-      '..y..y..y..y.',
-    ],
-  },
-  {
-    palette: alienPalette,
-    rows: [
-      '.....ccccc.....',
-      '....cwccccc....',
-      '..ggggggggggg..',
-      '.ggoggggggoggg.',
-      'gggGggGggGggGgg',
-      'gggggrggggggrgg',
-      'ggoggggggoggggg',
-      '.ggggggggggggg.',
-      '..y...y...y..y.',
-    ],
-  },
+/** Side-view saucer sprite (used for HUD lives). */
+export const ALIEN_ICON: Pattern = {
+  palette: saucerPalette,
+  rows: ['....ddd....', '...dwddd...', '.hhhhhhhhh.', 'mymmymmymmy', '.nnnnnnnnn.', '...kkkkk...'],
+}
+
+/**
+ * 3D saucer built as a voxel "lathe": one horizontal disc per row, top to bottom.
+ * `lights` rows alternate two colours around the rim; `dents` scatters dark voxels (damage).
+ */
+export type LatheRow = { r: number; color: string; lights?: [string, string]; dents?: number }
+
+const C = { dome: '#dde6ec', domeHi: '#ffffff', hull: '#b9c0c7', rim: '#666c72', low: '#4a4f55', dark: '#2a2d31', light: '#ffffff', dent: '#2b2e32', burn: '#6b4a3a' }
+
+/** Player saucer per damage stage: wider and thicker after every hit. */
+export const SAUCER_STAGES: LatheRow[][] = [
+  [
+    { r: 1.6, color: C.domeHi },
+    { r: 2.6, color: C.dome },
+    { r: 3.1, color: C.dome },
+    { r: 5.2, color: C.hull },
+    { r: 7.2, color: C.rim, lights: [C.light, C.rim] },
+    { r: 6.2, color: C.low },
+    { r: 3.6, color: C.dark },
+  ],
+  [
+    { r: 1.6, color: C.domeHi },
+    { r: 2.8, color: C.dome },
+    { r: 3.4, color: C.dome },
+    { r: 5.8, color: C.hull, dents: 0.027 },
+    { r: 7.6, color: C.hull, dents: 0.020 },
+    { r: 8.4, color: C.rim, lights: [C.light, C.rim] },
+    { r: 7.4, color: C.low, dents: 0.033 },
+    { r: 5.2, color: C.low },
+    { r: 3.6, color: C.dark },
+  ],
+  [
+    { r: 1.8, color: C.domeHi },
+    { r: 3.0, color: C.dome },
+    { r: 3.8, color: C.dome },
+    { r: 6.4, color: C.hull, dents: 0.040 },
+    { r: 8.2, color: C.hull, dents: 0.050 },
+    { r: 9.4, color: C.rim, lights: [C.light, C.burn] },
+    { r: 9.0, color: C.rim, dents: 0.060 },
+    { r: 8.0, color: C.low, dents: 0.050 },
+    { r: 6.2, color: C.low, dents: 0.033 },
+    { r: 4.0, color: C.dark },
+  ],
 ]
 
-/** Life icon / menu button saucer (same family, bigger). */
-export const ALIEN_ICON = ALIEN_STAGES[0]
+export const SAUCER_DENT = C.dent
 
-/** Space shuttle seen from above, nose pointing down (towards the player). */
+/** NASA-style orbiter seen from above, nose pointing down (towards the player). */
 export const SHUTTLE: Pattern = {
   palette: {
-    w: '#f2f2f2',
-    s: '#b8bcc8',
-    k: '#24242c',
-    o: '#ff9a2e',
+    w: '#f4f4f2', // white tiles
+    l: '#c9ccd2', // payload bay seam
+    k: '#1c1c22', // black heat tiles (nose, leading edges)
+    s: '#9ea3ad', // OMS pods
+    g: '#55585f', // engine bells
+    o: '#ff9a2e', // exhaust
     y: '#ffe14d',
   },
   rows: [
-    '..o.o.o..',
-    '..y.y.y..',
-    '..wwwww..',
-    'k.wwwww.k',
-    'kswwwwwsk',
-    'ksswwwssk',
-    '.ksswssk.',
-    '..swwws..',
-    '...www...',
-    '...www...',
-    '....k....',
+    '.....y.y.y.....',
+    '.....o.o.o.....',
+    '.....ggggg.....',
+    '....swwwwws....',
+    'kwwwwwwlwwwwwwk',
+    'kwwwwwwlwwwwwwk',
+    '.kwwwwwlwwwwwk.',
+    '..kwwwwlwwwwk..',
+    '...kwwwlwwwk...',
+    '....kwwlwwk....',
+    '.....kwlwk.....',
+    '.....kwlwk.....',
+    '.....wwlww.....',
+    '.....wwlww.....',
+    '.....wwlww.....',
+    '.....wwwww.....',
+    '......www......',
+    '......kwk......',
+    '......kkk......',
+    '.......k.......',
   ],
+}
+
+/** Vertical tail fin (columns = height above the fuselage, rows = along the body, rear first). */
+export const SHUTTLE_FIN: Pattern = {
+  palette: { w: '#f4f4f2', k: '#1c1c22' },
+  rows: ['wwwwk', 'wwwk.', 'wwk..', 'wk...'],
 }
 
 /** Junk food the shuttles throw at you. */

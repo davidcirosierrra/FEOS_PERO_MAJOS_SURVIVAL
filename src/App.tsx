@@ -1,8 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { useGame } from './game/store'
 import { Backdrop } from './screens/Backdrop'
-import { Menu } from './screens/Menu'
-import { Splash } from './screens/Splash'
+import { Home } from './screens/Home'
 
 // Physics (Rapier WASM) only loads when playing.
 const Game = lazy(() => import('./screens/Game').then((m) => ({ default: m.Game })))
@@ -17,8 +16,8 @@ export default function App() {
         </Suspense>
       ) : (
         <>
-          <Backdrop hero={screen === 'splash'} />
-          {screen === 'splash' ? <Splash /> : <Menu />}
+          <Backdrop />
+          <Home />
         </>
       )}
       <div className="scanlines" />

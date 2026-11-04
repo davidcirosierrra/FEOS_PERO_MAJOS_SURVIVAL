@@ -2,8 +2,8 @@
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { deflateSync } from 'node:zlib'
 
-const rows = ['...ccccc...', '..cwccccc..', '.ggggggggg.', 'gGgGgGgGgGg', '.ggggggggg.', '..y..y..y..']
-const pal = { c: '5ef6ff', w: 'ffffff', g: '39ff6a', G: '169c3c', y: 'fff35c' }
+const rows = ['....ddd....', '...dwddd...', '.hhhhhhhhh.', 'mymmymmymmy', '.nnnnnnnnn.', '...kkkkk...']
+const pal = { d: 'cfd8de', w: 'ffffff', h: 'a9b0b7', m: '7f868d', n: '5c6268', y: 'ffffff', k: '3a3e43' }
 const BG = '05010f'
 
 const crcTable = Array.from({ length: 256 }, (_, n) => {

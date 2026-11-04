@@ -3,6 +3,8 @@ const bits = (g: number[]) => g.reduce((acc, i) => acc | (1 << i), 0)
 const interactionGroups = (member: number, filter: number[]) => ((bits([member]) << 16) | bits(filter)) >>> 0
 
 export const VOXEL = 0.15
+export const SAUCER_VOXEL = 0.13
+export const SHUTTLE_VOXEL = 0.11
 export const FOOD_VOXEL = 0.11
 
 export const LIVES = 3

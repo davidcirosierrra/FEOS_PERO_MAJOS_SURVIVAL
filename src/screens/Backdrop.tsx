@@ -3,35 +3,8 @@ import { useMemo, useRef } from 'react'
 import type * as THREE from 'three'
 import { PixelCanvas } from '../scene/PixelCanvas'
 import { Starfield } from '../scene/Starfield'
-import { ALIEN_STAGES, FOOD, FOOD_KINDS, SHUTTLE } from '../voxel/patterns'
-import { Voxel } from '../voxel/Voxel'
-
-const easeOutBack = (x: number) => {
-  const c1 = 1.70158
-  const c3 = c1 + 1
-  return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2)
-}
-
-/** Big saucer that drops in from the top, then hovers and spins. */
-function HeroSaucer({ y = 1.2 }: { y?: number }) {
-  const ref = useRef<THREE.Group>(null)
-  const start = useRef<number | null>(null)
-  useFrame((state) => {
-    const g = ref.current
-    if (!g) return
-    const t = state.clock.elapsedTime
-    start.current ??= t
-    const k = Math.min(1, (t - start.current) / 1.4)
-    g.position.y = 12 + (y - 12) * easeOutBack(k) + Math.sin(t * 2) * 0.15 * k
-    g.rotation.y = (1 - k) * Math.PI * 4 + Math.sin(t * 0.8) * 0.5
-    g.rotation.x = 0.25 + Math.sin(t * 1.3) * 0.08
-  })
-  return (
-    <group ref={ref} position={[0, 12, 0]}>
-      <Voxel pattern={ALIEN_STAGES[0]} size={0.42} depth={3} />
-    </group>
-  )
-}
+import { FOOD, FOOD_KINDS } from '../voxel/patterns'
+import { Shuttle, Voxel } from '../voxel/Voxel'
 
 /** Shuttles crossing in the background on a loop. */
 function Flyby() {
@@ -53,7 +26,7 @@ function Flyby() {
   })
   return ships.map((s, i) => (
     <group key={i} ref={(g) => (refs.current[i] = g)} rotation={[0, 0, (s.dir * Math.PI) / 2]}>
-      <Voxel pattern={SHUTTLE} size={0.18} />
+      <Shuttle size={0.14} />
     </group>
   ))
 }
@@ -91,13 +64,12 @@ function FloatingFood() {
   ))
 }
 
-export function Backdrop({ hero }: { hero: boolean }) {
+export function Backdrop() {
   return (
     <PixelCanvas>
-      <Starfield speed={hero ? 1.2 : 2} />
+      <Starfield speed={1.5} />
       <FloatingFood />
       <Flyby />
-      {hero && <HeroSaucer />}
     </PixelCanvas>
   )
 }

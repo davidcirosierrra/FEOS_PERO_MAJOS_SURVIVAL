@@ -3,9 +3,10 @@ import { CuboidCollider, RigidBody, useBeforePhysicsStep, type RapierRigidBody }
 import { useEffect, useRef } from 'react'
 import type * as THREE from 'three'
 import { readTilt } from '../input'
-import { ALIEN_STAGES, patternSize } from '../voxel/patterns'
-import { Voxel } from '../voxel/Voxel'
-import { BASE_DAMPING, GROUPS, STAGES, THRUST, VOXEL } from './config'
+import { CAMERA_Z } from '../scene/PixelCanvas'
+import { SAUCER_STAGES } from '../voxel/patterns'
+import { latheSize, Saucer } from '../voxel/Voxel'
+import { BASE_DAMPING, GROUPS, SAUCER_VOXEL, STAGES, THRUST } from './config'
 import { field, playerState, useGame } from './store'
 
 const PHYSICS_DT = 1 / 60
@@ -13,12 +14,13 @@ const PHYSICS_DT = 1 / 60
 export function Player() {
   const body = useRef<RapierRigidBody>(null)
   const visual = useRef<THREE.Group>(null)
+  const spin = useRef<THREE.Mesh>(null)
   const stage = useGame((s) => s.stage)
   const lives = useGame((s) => s.lives)
   const hitPlayer = useGame((s) => s.hitPlayer)
 
-  const pattern = ALIEN_STAGES[stage]
-  const { w, h } = patternSize(pattern)
+  const rows = SAUCER_STAGES[stage]
+  const { halfW, halfH } = latheSize(rows, SAUCER_VOXEL)
   const { mass } = STAGES[stage]
 
   // Heavier ship: less damping → more inertia; with constant thrust its top speed drops too.
@@ -46,14 +48,16 @@ export function Player() {
     if (!b || !v) return
     const p = b.translation()
     // Safety clamp in case something tunnels through a wall.
-    const limit = field.halfW - (w * VOXEL) / 2
+    const limit = field.halfW - halfW
     if (Math.abs(p.x) > limit + 0.3) b.setTranslation({ x: Math.sign(p.x) * limit, y: p.y, z: 0 }, true)
     playerState.x = p.x
 
     const vx = b.linvel().x
     const t = state.clock.elapsedTime
-    v.rotation.y = -vx * 0.07
-    v.rotation.z = -vx * 0.025
+    // The camera looks down on the ship (~19°): tip it back so we see the side profile and dome.
+    v.rotation.x = -Math.atan2(-field.playerY, CAMERA_Z) + 0.1
+    v.rotation.z = -vx * 0.035
+    spin.current?.rotateY(0.04 + Math.abs(vx) * 0.01)
     v.position.y = Math.sin(t * 3) * 0.06
 
     const { invulnUntil, gameOver } = useGame.getState()
@@ -78,14 +82,14 @@ export function Player() {
       }}
     >
       <CuboidCollider
-        args={[(w * VOXEL) / 2, (h * VOXEL) / 2, 0.3]}
+        args={[halfW, halfH, 0.3]}
         mass={mass}
         restitution={0.55}
         friction={0}
         collisionGroups={GROUPS.player}
       />
       <group ref={visual}>
-        <Voxel pattern={pattern} size={VOXEL} depth={3} />
+        <Saucer ref={spin} rows={rows} size={SAUCER_VOXEL} />
       </group>
     </RigidBody>
   )

@@ -5,7 +5,13 @@ import App from './App'
 import './index.css'
 import { startInput } from './input'
 
-startInput()
+void startInput()
+
+if (location.search.includes('debug')) {
+  void Promise.all([import('./input'), import('./game/store')]).then(([i, st]) => {
+    Object.assign(window, { __paranoid: { input: i.input, player: st.playerState, store: st.useGame } })
+  })
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
