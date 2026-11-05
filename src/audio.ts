@@ -256,6 +256,50 @@ export const sfx = {
   click: () => fx((t) => tone(sfxBus, 880, t, 0.05, 'square', 0.06)),
 }
 
+// ---------------------------------------------------------------- rain ambience
+
+let rain: { src: AudioBufferSourceNode; gain: GainNode } | null = null
+
+/** Looping rain: filtered noise (hiss of drops + low rumble), faded in/out. */
+export function setRain(on: boolean) {
+  if (!ctx) return
+  const t = ctx.currentTime
+  if (on && !rain) {
+    const src = ctx.createBufferSource()
+    src.buffer = noiseBuf
+    src.loop = true
+    const hiss = ctx.createBiquadFilter()
+    hiss.type = 'bandpass'
+    hiss.frequency.value = 3500
+    hiss.Q.value = 0.6
+    const rumble = ctx.createBiquadFilter()
+    rumble.type = 'lowpass'
+    rumble.frequency.value = 400
+    const rumbleGain = ctx.createGain()
+    rumbleGain.gain.value = 0.6
+    const gain = ctx.createGain()
+    gain.gain.setValueAtTime(0.0001, t)
+    gain.gain.exponentialRampToValueAtTime(0.32, t + 2.5)
+    src.connect(hiss).connect(gain)
+    src.connect(rumble).connect(rumbleGain).connect(gain)
+    gain.connect(sfxBus)
+    src.start()
+    rain = { src, gain }
+  } else if (!on && rain) {
+    const r = rain
+    rain = null
+    r.gain.gain.cancelScheduledValues(t)
+    r.gain.gain.setValueAtTime(Math.max(0.0001, r.gain.gain.value), t)
+    r.gain.gain.exponentialRampToValueAtTime(0.0001, t + 2)
+    r.src.stop(t + 2.1)
+  }
+}
+
+/** Random fat drop hitting something nearby. */
+export function rainDrip() {
+  fx((t) => tone(sfxBus, 1800 + Math.random() * 1600, t, 0.05, 'sine', 0.05, 600))
+}
+
 // ---------------------------------------------------------------- music
 // Fast street-punk in the spirit of 80s Basque/Spanish punk (all original riffs): distorted power
 // chords in eighths, driving bass, skank beat (kick/snare alternating on every eighth).

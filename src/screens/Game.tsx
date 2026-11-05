@@ -7,6 +7,7 @@ import { ConfigButton, ConfigPanel } from '../components/Config'
 import { EdgeWarnings } from '../components/EdgeWarnings'
 import { FirstPersonHands } from '../components/FirstPersonHands'
 import { QuipProjector, Quips } from '../components/Quips'
+import { Rain } from '../components/Rain'
 import { Director } from '../game/Director'
 import { Enemies } from '../game/Enemy'
 import { Explosions } from '../game/Explosions'
@@ -106,6 +107,7 @@ export function Game() {
         </Suspense>
         <World />
       </PixelCanvas>
+      <Rain />
       <Quips />
       <FirstPersonHands />
       <Hud />

@@ -78,6 +78,8 @@ type State = {
   pickups: Pickup[]
   /** Speech bubbles (insults / complaints) from fans that get hit. */
   quips: { id: number; x: number; y: number; text: string; at: number }[]
+  /** Random weather, rolled on every new level. */
+  raining: boolean
   boss: Boss | null
   cookies: Cookie[]
   /** Medals held, in the order they were earned. */
@@ -146,6 +148,7 @@ export const useGame = create<State>((set, get) => ({
   explosions: [],
   pickups: [],
   quips: [],
+  raining: false,
   medals: [],
   medalHits: 0,
   boss: null,
@@ -178,6 +181,7 @@ export const useGame = create<State>((set, get) => ({
       explosions: [],
       pickups: [],
       quips: [],
+      raining: false,
       medals: [],
       medalHits: 0,
       boss: null,
@@ -186,6 +190,8 @@ export const useGame = create<State>((set, get) => ({
 
   nextWave: () => {
     const n = get().wave + 1
+    // Bilbao weather: some levels it just starts raining (never on the very first one).
+    set({ raining: n > 1 && Math.random() < RAIN_CHANCE })
     if (n % BOSS_EVERY === 0) {
       const hp = bossCfg(n).hp
       sfx.bossArrive()
@@ -473,8 +479,13 @@ const QUIPS = [
   'NIRE KAMISETA!',
   'AUUU!',
   'HORI MINA!',
+  'GORA LA PAJA!',
+  'I ❤️ ARRIGORRIAGA',
+  'UGAO ES FEO!',
 ]
 export const QUIP_MS = 1400
+/** Chance that a new level is rainy. */
+const RAIN_CHANCE = 0.35
 
 const PICK_NAME: Record<MedalKind, string> = { red: 'GORRIA', blue: 'URDINA', yellow: 'HORIA' }
 
