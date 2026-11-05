@@ -11,6 +11,7 @@ import { jumpPose } from './jump'
 import { field, playerState, useGame } from './store'
 
 const PHYSICS_DT = 1 / 60
+const X_ONLY: [boolean, boolean, boolean] = [true, false, false]
 
 export function Player() {
   const body = useRef<RapierRigidBody>(null)
@@ -81,7 +82,7 @@ export function Player() {
       type="dynamic"
       position={spawn}
       gravityScale={0}
-      enabledTranslations={[true, false, false]}
+      enabledTranslations={X_ONLY}
       lockRotations
       colliders={false}
       ccd

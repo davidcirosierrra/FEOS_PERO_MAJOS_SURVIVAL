@@ -1,8 +1,8 @@
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
-import { memo, useMemo, useRef } from 'react'
+import { memo, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { FOOD, LASER, patternSize } from '../voxel/patterns'
+import { FOOD, grayPattern, LASER, patternSize, type Pattern } from '../voxel/patterns'
 import { Voxel } from '../voxel/Voxel'
 import { FOOD_VOXEL, GROUPS, PLAYER_SHOT_SPEED, RED_DEFLECT_DEG } from './config'
 import { field, useGame, type FoodShot, type Shot } from './store'
@@ -37,6 +37,15 @@ const PlayerShot = memo(function PlayerShot({ s }: { s: Shot }) {
   )
 })
 
+const SPIN_Y_ONLY: [boolean, boolean, boolean] = [false, true, false]
+
+/** Food sprite; greys out and fades once it can't hurt you any more (shot down / deflected). */
+function FoodLook({ pattern, markHarmless }: { pattern: Pattern; markHarmless: { current: () => void } }) {
+  const [harmless, setHarmless] = useState(false)
+  markHarmless.current = () => setHarmless(true)
+  return <Voxel pattern={harmless ? grayPattern(pattern) : pattern} size={FOOD_VOXEL} depth={3} opacity={harmless ? 0.45 : 1} />
+}
+
 /** Shot-down food falls along -z (away from the camera) at this speed and is removed past this depth. */
 const FALL_SPEED = 14
 const FALL_GONE_Z = 45
@@ -53,6 +62,9 @@ const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
   }, [s.speed])
   const deflect = useGame((st) => st.deflect)
   const shootFood = useGame((st) => st.shootFood)
+  // Turns grey/translucent once harmless. Kept in a child so the RigidBody itself never re-renders
+  // (a re-render would make @react-three/rapier re-apply its props mid-flight).
+  const markHarmless = useRef<() => void>(() => {})
   useFrame(() => {
     const b = body.current
     if (!b) return
@@ -67,7 +79,7 @@ const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
       gravityScale={0}
       linearVelocity={vel}
       angularVelocity={angVel}
-      enabledRotations={[false, true, false]}
+      enabledRotations={SPIN_Y_ONLY}
       colliders={false}
       userData={{ kind: 'enemyShot', id: s.id, deflected: false }}
       onIntersectionEnter={({ other, target }) => {
@@ -79,6 +91,7 @@ const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
         if (!result) return
         // Shot down: harmless and no more collisions from now on.
         ud.deflected = ud.falling = true
+        markHarmless.current()
         for (let i = 0; i < b.numColliders(); i++) b.collider(i).setCollisionGroups(0)
         b.setEnabledRotations(true, true, true, true)
         b.setAngvel({ x: (Math.random() - 0.5) * 16, y: (Math.random() - 0.5) * 16, z: (Math.random() - 0.5) * 16 }, true)
@@ -108,6 +121,7 @@ const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
         if (!ud || ud.deflected || !b || other.rigidBodyObject?.userData?.kind !== 'umbrella') return
         // Harmless from now on: fly off with gravity and a wild spin.
         ud.deflected = true
+        markHarmless.current()
         b.setGravityScale(0.8, true)
         const v = b.linvel()
         b.setLinvel({ x: v.x + (b.translation().x - other.rigidBody!.translation().x) * 4 + (Math.random() - 0.5) * 3, y: Math.max(Math.abs(v.y), 6), z: 0 }, true)
@@ -129,7 +143,7 @@ const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
         friction={0}
         collisionGroups={GROUPS.foodSolid}
       />
-      <Voxel pattern={pattern} size={FOOD_VOXEL} depth={3} />
+      <FoodLook pattern={pattern} markHarmless={markHarmless} />
     </RigidBody>
   )
 })

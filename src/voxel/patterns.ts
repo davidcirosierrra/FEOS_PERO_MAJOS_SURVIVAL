@@ -203,3 +203,20 @@ const medal = (k: MedalKind): Pattern => ({
 
 /** Shot power-up medals. */
 export const MEDALS: Record<MedalKind, Pattern> = { red: medal('red'), blue: medal('blue'), yellow: medal('yellow') }
+
+const grayCache = new WeakMap<Pattern, Pattern>()
+/** Same pattern in greyscale (used for harmless, shot-down food). */
+export function grayPattern(p: Pattern): Pattern {
+  const hit = grayCache.get(p)
+  if (hit) return hit
+  const palette: Record<string, string> = {}
+  for (const [k, hex] of Object.entries(p.palette)) {
+    const n = parseInt(hex.slice(1), 16)
+    const l = Math.round(0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255))
+    const g = l.toString(16).padStart(2, '0')
+    palette[k] = `#${g}${g}${g}`
+  }
+  const gray = { rows: p.rows, palette }
+  grayCache.set(p, gray)
+  return gray
+}

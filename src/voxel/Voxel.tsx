@@ -48,13 +48,16 @@ type Props = {
   depth?: number
   /** Unlit material (lasers, glowing bits). */
   basic?: boolean
+  /** < 1 makes it translucent. */
+  opacity?: number
 } & Omit<ThreeElements['mesh'], 'geometry'>
 
-export function Voxel({ pattern, size, depth = 2, basic = false, ...mesh }: Props) {
+export function Voxel({ pattern, size, depth = 2, basic = false, opacity = 1, ...mesh }: Props) {
   const geometry = useMemo(() => voxelGeometry(pattern, size, depth), [pattern, size, depth])
+  const fade = opacity < 1 ? { transparent: true, opacity, depthWrite: false } : {}
   return (
     <mesh geometry={geometry} {...mesh}>
-      {basic ? <meshBasicMaterial vertexColors /> : <meshLambertMaterial vertexColors flatShading />}
+      {basic ? <meshBasicMaterial vertexColors {...fade} /> : <meshLambertMaterial vertexColors flatShading {...fade} />}
     </mesh>
   )
 }

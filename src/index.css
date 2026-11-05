@@ -484,9 +484,8 @@ body,
 }
 .boss-track {
   position: relative;
-  height: 9px;
-  border: 1px solid var(--pink);
-  background: #2a0c1c;
+  height: 8px;
+  background: rgba(255, 126, 182, 0.18);
 }
 .boss-track i {
   position: absolute;

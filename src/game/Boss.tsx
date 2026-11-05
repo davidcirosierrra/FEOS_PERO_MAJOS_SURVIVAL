@@ -158,6 +158,7 @@ const PartDebris = memo(function PartDebris({ d, onDone }: { d: Debris; onDone: 
   )
 })
 
+const XY_ONLY: [boolean, boolean, boolean] = [true, true, false]
 const COOKIE_SIZE = 0.11
 const COOKIE_R = (patternSize(COOKIE).w * COOKIE_SIZE) / 2
 
@@ -185,7 +186,7 @@ const CookieBody = memo(function CookieBody({ c }: { c: Cookie }) {
       linearVelocity={init.vel}
       gravityScale={0}
       linearDamping={0}
-      enabledTranslations={[true, true, false]}
+      enabledTranslations={XY_ONLY}
       lockRotations
       colliders={false}
       ccd
