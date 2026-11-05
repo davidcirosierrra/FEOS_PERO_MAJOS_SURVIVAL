@@ -109,7 +109,7 @@ function useRandomInterval(range: [number, number], drop: () => void) {
     const schedule = () => {
       const [a, z] = range
       t = setTimeout(() => {
-        if (!document.hidden) drop()
+        if (!document.hidden && !useGame.getState().paused) drop()
         schedule()
       }, a + Math.random() * (z - a))
     }

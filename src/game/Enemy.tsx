@@ -22,7 +22,7 @@ export function Enemy({ e }: { e: EnemyT }) {
   useFrame((_, rawDt) => {
     const b = body.current
     const s = useGame.getState()
-    if (!b || s.gameOver) return
+    if (!b || s.gameOver || s.paused) return
     const dt = Math.min(rawDt, 0.05)
     t.current += dt
     if (t.current < 0) return

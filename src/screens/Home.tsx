@@ -1,4 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { sfx, unlockAudio } from '../audio'
+import { ConfigPanel } from '../components/Config'
 import { useGame } from '../game/store'
 import { calibrate, input, readTilt, sensorAlive, startInput } from '../input'
 import { pad } from '../storage'
@@ -47,9 +49,12 @@ function TiltMeter() {
 export function Home() {
   const hi = useGame((s) => s.highScore)
   const startGame = useGame((s) => s.startGame)
+  const [config, setConfig] = useState(false)
   useEffect(preload, [])
 
   const play = async () => {
+    unlockAudio()
+    sfx.click()
     await startInput(true)
     calibrate()
     void goFullscreen()
@@ -57,7 +62,14 @@ export function Home() {
   }
 
   return (
-    <div className="screen home" onPointerDown={() => void startInput(true)}>
+    <div
+      className="screen home"
+      onPointerDown={() => {
+        // First touch unlocks audio (browsers need a gesture) and the motion sensors.
+        unlockAudio()
+        void startInput(true)
+      }}
+    >
       <h1 className="title" aria-label={TITLE}>
         {[...TITLE].map((ch, i) => (
           <span key={i} style={{ animationDelay: `${0.2 + i * 0.1}s` }}>
@@ -70,9 +82,20 @@ export function Home() {
         HI-SCORE <b>{pad(hi)}</b>
       </p>
 
-      <button className="pixel-btn play-btn intro-drop" onClick={play}>
-        PLAY
-      </button>
+      <div className="home-buttons intro-drop">
+        <button className="pixel-btn play-btn" onClick={play}>
+          PLAY
+        </button>
+        <button
+          className="pixel-btn alt small"
+          onClick={() => {
+            sfx.click()
+            setConfig(true)
+          }}
+        >
+          CONFIG
+        </button>
+      </div>
 
       <div className="menu-info intro">
         <TiltMeter />
@@ -82,6 +105,7 @@ export function Home() {
         <p className="dim">3 HITS = 1 LIFE</p>
         <p className="dim">RED PIERCE · BLUE x2 · YELLOW FAST</p>
       </div>
+      {config && <ConfigPanel onClose={() => setConfig(false)} />}
     </div>
   )
 }

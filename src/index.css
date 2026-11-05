@@ -183,8 +183,14 @@ body,
 }
 
 /* ---------- Menu ---------- */
-.play-btn {
+.home-buttons {
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+.play-btn {
   font-size: 20px;
   padding: 20px 40px;
 }
@@ -487,4 +493,67 @@ body,
   inset: 0 auto 0 0;
   background: linear-gradient(90deg, var(--pink), #8fd3e8);
   transition: width 0.12s steps(3);
+}
+
+.pixel-btn.small {
+  font-size: 10px;
+  padding: 10px 12px;
+  min-width: 52px;
+}
+.pixel-btn.off {
+  background: #5a5f6a;
+  box-shadow: 0 4px 0 #2a2d31;
+  color: #c9ccd2;
+}
+.config-btn {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  z-index: 2;
+}
+.overlay.config {
+  z-index: 5;
+  background: rgba(5, 1, 15, 0.9);
+  gap: 18px;
+}
+.cfg-title {
+  font-size: 20px;
+  color: var(--green);
+  text-shadow: 3px 3px 0 #0b5c22;
+}
+.cfg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(300px, 86%);
+}
+.cfg-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+}
+.cfg-row.vol {
+  margin-top: -4px;
+  margin-bottom: 8px;
+}
+.cfg-row.disabled {
+  opacity: 0.35;
+}
+.vol-bar {
+  display: flex;
+  gap: 3px;
+}
+.vol-bar i {
+  width: 10px;
+  height: 14px;
+  background: #2a2d31;
+}
+.vol-bar i.on {
+  background: var(--cyan);
 }

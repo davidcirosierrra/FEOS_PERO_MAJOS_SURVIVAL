@@ -3,6 +3,7 @@ import { Physics } from '@react-three/rapier'
 import { useEffect, useRef, useState } from 'react'
 import { PickupDropper, Pickups } from '../game/Pickups'
 import { BossLayer } from '../game/Boss'
+import { ConfigButton, ConfigPanel } from '../components/Config'
 import { Director } from '../game/Director'
 import { Enemies } from '../game/Enemy'
 import { Explosions } from '../game/Explosions'
@@ -27,9 +28,10 @@ function World() {
   useField()
   const runId = useGame((s) => s.runId)
   const gameOver = useGame((s) => s.gameOver)
+  const paused = useGame((s) => s.paused)
   const hidden = usePageHidden()
   return (
-    <Physics key={runId} gravity={[0, -12, 0]} paused={gameOver || hidden}>
+    <Physics key={runId} gravity={[0, -12, 0]} paused={gameOver || hidden || paused}>
       <Walls />
       <Player />
       <UmbrellaSlot />
@@ -57,6 +59,8 @@ const SWIPE_MS = 450
 
 export function Game() {
   const gameOver = useGame((s) => s.gameOver)
+  const paused = useGame((s) => s.paused)
+  const setPaused = useGame((s) => s.setPaused)
   const firePlayer = useGame((s) => s.firePlayer)
   const openUmbrella = useGame((s) => s.openUmbrella)
   const jump = useGame((s) => s.jump)
@@ -97,6 +101,8 @@ export function Game() {
       <Hud />
       <Director />
       <PickupDropper />
+      {!gameOver && <ConfigButton />}
+      {paused && <ConfigPanel onClose={() => setPaused(false)} title="PAUSED" />}
       {gameOver && <GameOver />}
     </div>
   )

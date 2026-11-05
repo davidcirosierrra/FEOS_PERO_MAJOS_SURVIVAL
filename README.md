@@ -12,4 +12,6 @@ npm run dev      # desktop: ← → / A D move, click / Space fire, ↑ / W loop
 npm run build
 ```
 
+Sound: all chiptune, synthesised with Web Audio (`src/audio.ts`, no audio files): SFX + menu / game / boss soundtracks. CONFIG menu (home, and gear button in game = pause) for music/SFX on-off + volume and vibration, saved in `localStorage`.
+
 Icons: `node scripts/gen-icons.mjs`.

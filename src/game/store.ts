@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { sfx } from '../audio'
+import { useSettings } from '../settings'
 import { loadHighScore, saveHighScore } from '../storage'
 import { FOOD_KINDS, MEDAL_KINDS, type MedalKind } from '../voxel/patterns'
 import {
@@ -55,6 +57,8 @@ type State = {
   wave: number
   runId: number
   gameOver: boolean
+  /** Config menu open mid-game. */
+  paused: boolean
   newRecord: boolean
   banner: string | null
   invulnUntil: number
@@ -76,6 +80,7 @@ type State = {
   medalHits: number
 
   setScreen: (s: Screen) => void
+  setPaused: (p: boolean) => void
   startGame: () => void
   nextWave: () => void
   clearBanner: () => void
@@ -103,6 +108,7 @@ type State = {
 }
 
 const vibrate = (p: number | number[]) => {
+  if (!useSettings.getState().vibration) return
   try {
     navigator.vibrate?.(p)
   } catch {
@@ -119,6 +125,7 @@ export const useGame = create<State>((set, get) => ({
   wave: 0,
   runId: 0,
   gameOver: false,
+  paused: false,
   newRecord: false,
   banner: null,
   invulnUntil: 0,
@@ -137,7 +144,8 @@ export const useGame = create<State>((set, get) => ({
   boss: null,
   cookies: [],
 
-  setScreen: (screen) => set({ screen }),
+  setScreen: (screen) => set({ screen, paused: false }),
+  setPaused: (paused) => set({ paused }),
 
   startGame: () =>
     set((s) => ({
@@ -148,6 +156,7 @@ export const useGame = create<State>((set, get) => ({
       wave: 0,
       runId: s.runId + 1,
       gameOver: false,
+      paused: false,
       newRecord: false,
       banner: null,
       invulnUntil: 0,
@@ -171,6 +180,7 @@ export const useGame = create<State>((set, get) => ({
     const n = get().wave + 1
     if (n % BOSS_EVERY === 0) {
       const hp = bossCfg(n).hp
+      sfx.bossArrive()
       return set({ wave: n, enemies: [], boss: { id: id(), hp, maxHp: hp, level: n } })
     }
     const { count } = waveCfg(n)
@@ -192,6 +202,7 @@ export const useGame = create<State>((set, get) => ({
         delay: i * 0.12,
       })
     }
+    if (n > 1) sfx.levelUp()
     set({ wave: n, enemies })
   },
 
@@ -199,7 +210,7 @@ export const useGame = create<State>((set, get) => ({
 
   firePlayer: () => {
     const s = get()
-    if (s.gameOver || s.screen !== 'game') return
+    if (s.gameOver || s.paused || s.screen !== 'game') return
     const now = performance.now()
     const cooldown = STAGES[s.stage].fireCooldown * (s.medals.includes('yellow') ? YELLOW_COOLDOWN_FACTOR : 1)
     if (now - s.lastShot < cooldown) return
@@ -210,15 +221,17 @@ export const useGame = create<State>((set, get) => ({
           { id: id(), x: playerState.x + BLUE_SPREAD, y },
         ]
       : [{ id: id(), x: playerState.x, y }]
+    sfx.shoot(s.medals)
     set({ lastShot: now, playerShots: [...s.playerShots, ...shots] })
   },
 
   openUmbrella: () => {
     const s = get()
     const now = performance.now()
-    if (s.gameOver || s.screen !== 'game' || now < s.umbrellaReadyAt) return
+    if (s.gameOver || s.paused || s.screen !== 'game' || now < s.umbrellaReadyAt) return
     const run = s.runId
     vibrate(15)
+    sfx.umbrella()
     set({ umbrellaOpen: true, umbrellaReadyAt: now + UMBRELLA_COOLDOWN_MS })
     setTimeout(() => {
       if (get().runId === run) set({ umbrellaOpen: false })
@@ -228,8 +241,9 @@ export const useGame = create<State>((set, get) => ({
   jump: () => {
     const s = get()
     const now = performance.now()
-    if (s.gameOver || s.screen !== 'game' || now < s.jumpReadyAt) return
+    if (s.gameOver || s.paused || s.screen !== 'game' || now < s.jumpReadyAt) return
     vibrate(30)
+    sfx.loop()
     set({ jumpStart: now, jumpReadyAt: now + JUMP_CHARGE_MS })
   },
 
@@ -239,6 +253,7 @@ export const useGame = create<State>((set, get) => ({
     if (s.gameOver || !s.enemyShots.some((e) => e.id === foodId) || !s.playerShots.some((p) => p.id === shotId)) return null
     vibrate(10)
     const pierce = s.medals.includes('red')
+    sfx.foodHit(pierce)
     set({
       playerShots: pierce ? s.playerShots : s.playerShots.filter((p) => p.id !== shotId),
       score: s.score + SCORE_PER_FOOD * Math.max(1, s.wave),
@@ -249,6 +264,7 @@ export const useGame = create<State>((set, get) => ({
   deflect: (sid) => {
     if (!get().enemyShots.some((e) => e.id === sid)) return
     vibrate(12)
+    sfx.boing()
     set((s) => ({ score: s.score + SCORE_PER_DEFLECT * Math.max(1, s.wave) }))
   },
 
@@ -280,6 +296,7 @@ export const useGame = create<State>((set, get) => ({
       const medalHits = s.medalHits + 1
       if (medalHits >= HITS_PER_MEDAL_LOSS) {
         const lost = s.medals[s.medals.length - 1]
+        sfx.medalLost()
         set({ medals: s.medals.slice(0, -1), medalHits: 0, banner: `${lost.toUpperCase()} LOST` })
       } else set({ medalHits })
     }
@@ -287,6 +304,7 @@ export const useGame = create<State>((set, get) => ({
     const hits = s.stage + 1
     if (hits < HITS_PER_LIFE) {
       vibrate(80)
+      sfx.hurt()
       return set({
         ...removed,
         stage: hits,
@@ -303,10 +321,13 @@ export const useGame = create<State>((set, get) => ({
       { id: id(), x: playerState.x, y: field.playerY, colors: ['#39ff6a', '#5ef6ff', '#fff35c'], big: true },
     ]
     if (lives > 0) {
+      sfx.lifeLost()
       return set({ enemyShots: [], cookies: [], lives, stage: 0, invulnUntil: now + RESPAWN_INVULN_MS, explosions })
     }
     const newRecord = s.score > s.highScore
     if (newRecord) saveHighScore(s.score)
+    sfx.lifeLost()
+    sfx.gameOver()
     set({
       enemyShots: [],
       cookies: [],
@@ -327,10 +348,12 @@ export const useGame = create<State>((set, get) => ({
     const playerShots = s.playerShots.filter((p) => p.id !== shotId)
     const spark = { id: id(), x, y, colors: ['#ff7eb6', '#8fd3e8', '#ffffff'] }
     if (hp > 0) {
+      sfx.bossHit()
       return set({ playerShots, boss: { ...b, hp }, score: s.score + SCORE_PER_BOSS_HIT * s.wave, explosions: [...s.explosions, spark] })
     }
     // Defeated: big multi-colour blast, bonus, clear its projectiles.
     vibrate([60, 40, 60, 40, 200])
+    sfx.bossDeath()
     const blast = [-1.5, 0, 1.5].map((dx, i) => ({
       id: id(),
       x: x + dx,
@@ -371,6 +394,7 @@ export const useGame = create<State>((set, get) => ({
   pushCookie: (cookieId, shotId) => {
     const s = get()
     if (s.gameOver || !s.cookies.some((c) => c.id === cookieId) || !s.playerShots.some((p) => p.id === shotId)) return false
+    sfx.cookie()
     set({ playerShots: s.playerShots.filter((p) => p.id !== shotId) })
     return true
   },
@@ -379,6 +403,7 @@ export const useGame = create<State>((set, get) => ({
     const s = get()
     if (!s.enemies.some((e) => e.id === enemyId) || !s.playerShots.some((p) => p.id === shotId)) return
     vibrate(25)
+    sfx.explode()
     set({
       enemies: s.enemies.filter((e) => e.id !== enemyId),
       playerShots: s.playerShots.filter((p) => p.id !== shotId),
@@ -389,7 +414,7 @@ export const useGame = create<State>((set, get) => ({
 
   spawnPickup: (kind) => {
     const s = get()
-    if (s.gameOver || s.screen !== 'game') return
+    if (s.gameOver || s.paused || s.screen !== 'game') return
     const x = (Math.random() * 2 - 1) * (field.halfW - 0.8)
     const speed = kind === 'banana' ? BANANA_SPEED : waveCfg(Math.max(1, s.wave)).shotSpeed * MEDAL_SPEED_FACTOR
     set({ pickups: [...s.pickups, { id: id(), x, y: field.halfH + 1, kind, speed }] })
@@ -405,6 +430,7 @@ export const useGame = create<State>((set, get) => ({
     const pickups = s.pickups.filter((q) => q.id !== pid)
     const colors = p.kind === 'banana' ? ['#ffe14d', '#fff59d', '#ffffff'] : [MEDAL_SPARK[p.kind], '#ffffff']
     const explosions = [...s.explosions, { id: id(), x: playerState.x, y: field.playerY + 0.4, colors }]
+    sfx.pickup(p.kind !== 'banana' && s.medals.includes(p.kind) ? 'dup' : p.kind)
     if (p.kind === 'banana') {
       if (s.stage > 0) return set({ pickups, explosions, stage: s.stage - 1, banner: 'HULL +1' })
       return set({ pickups, explosions, score: s.score + SCORE_BANANA_FULL, banner: `+${SCORE_BANANA_FULL}` })

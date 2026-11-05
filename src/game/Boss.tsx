@@ -2,6 +2,7 @@ import { useFrame } from '@react-three/fiber'
 import { BallCollider, CuboidCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import type * as THREE from 'three'
+import { sfx } from '../audio'
 import { patternSize } from '../voxel/patterns'
 import { COOKIE, TRUCK_GRID, TRUCK_PARTS } from '../voxel/truck'
 import { Voxel } from '../voxel/Voxel'
@@ -49,6 +50,7 @@ function Truck() {
     const fresh: Debris[] = []
     for (let i = prevLost.current; i < lost; i++) fresh.push({ id: Math.random(), part: i, x: p.x + PARTS[i].cx, y: p.y + PARTS[i].cy })
     prevLost.current = lost
+    sfx.partOff()
     setDebris((d) => [...d, ...fresh])
   }, [lost])
 
@@ -62,7 +64,7 @@ function Truck() {
   useFrame((_, rawDt) => {
     const b = body.current
     const s = useGame.getState()
-    if (!b || s.gameOver) return
+    if (!b || s.gameOver || s.paused) return
     const dt = Math.min(rawDt, 0.05)
     t.current += dt
     const targetY = field.halfH * 0.58
