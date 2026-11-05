@@ -372,3 +372,171 @@ export const PICK_YELLOW: Pattern = {
     '...........',
   ],
 }
+
+export const FELIPE_SIGN0: Pattern = {
+  palette: { b: '#17402a', B: '#0f2c1d', x: '#2a6a44', y: '#ffd23d', Y: '#b8860b', O: '#160c18' },
+  rows: [
+    '.OOOOOO.',
+    'OxxxxxxO',
+    'OxyyybBO',
+    'OxybbbBO',
+    'OxyybbBO',
+    'OxYbbbBO',
+    'OxYbbbBO',
+    'OxbbbbBO',
+    'OxBBBBBO',
+    '.OOOOOO.',
+  ],
+}
+
+export const FELIPE_SIGN1: Pattern = {
+  palette: { b: '#17402a', B: '#0f2c1d', x: '#2a6a44', y: '#ffd23d', Y: '#b8860b', O: '#160c18' },
+  rows: [
+    '.OOOOOO.',
+    'OxxxxxxO',
+    'OxyyybBO',
+    'OxybbbBO',
+    'OxyybbBO',
+    'OxYbbbBO',
+    'OxYYYbBO',
+    'OxbbbbBO',
+    'OxBBBBBO',
+    '.OOOOOO.',
+  ],
+}
+
+export const FELIPE_SIGN2: Pattern = {
+  palette: { b: '#17402a', B: '#0f2c1d', x: '#2a6a44', y: '#ffd23d', Y: '#b8860b', O: '#160c18' },
+  rows: [
+    '.OOOOOO.',
+    'OxxxxxxO',
+    'OxybbbBO',
+    'OxybbbBO',
+    'OxybbbBO',
+    'OxYbbbBO',
+    'OxYYYbBO',
+    'OxbbbbBO',
+    'OxBBBBBO',
+    '.OOOOOO.',
+  ],
+}
+
+export const FELIPE_SIGN3: Pattern = {
+  palette: { b: '#17402a', B: '#0f2c1d', x: '#2a6a44', y: '#ffd23d', Y: '#b8860b', O: '#160c18' },
+  rows: [
+    '.OOOOOO.',
+    'OxxxxxxO',
+    'OxyyybBO',
+    'OxbybbBO',
+    'OxbybbBO',
+    'OxbYbbBO',
+    'OxYYYbBO',
+    'OxbbbbBO',
+    'OxBBBBBO',
+    '.OOOOOO.',
+  ],
+}
+
+export const FELIPE_SIGN4: Pattern = {
+  palette: { b: '#17402a', B: '#0f2c1d', x: '#2a6a44', y: '#ffd23d', Y: '#b8860b', O: '#160c18' },
+  rows: [
+    '.OOOOOO.',
+    'OxxxxxxO',
+    'OxyybbBO',
+    'OxybybBO',
+    'OxyybbBO',
+    'OxYbbbBO',
+    'OxYbbbBO',
+    'OxbbbbBO',
+    'OxBBBBBO',
+    '.OOOOOO.',
+  ],
+}
+
+export const FELIPE_SIGN5: Pattern = {
+  palette: { b: '#17402a', B: '#0f2c1d', x: '#2a6a44', y: '#ffd23d', Y: '#b8860b', O: '#160c18' },
+  rows: [
+    '.OOOOOO.',
+    'OxxxxxxO',
+    'OxyyybBO',
+    'OxybbbBO',
+    'OxyybbBO',
+    'OxYbbbBO',
+    'OxYYYbBO',
+    'OxbbbbBO',
+    'OxBBBBBO',
+    '.OOOOOO.',
+  ],
+}
+
+export const FELIPE_AWNING: Pattern = {
+  palette: { g: '#2e8b57', G: '#1f6b40', w: '#f4f4f2', W: '#cfd2d6', s: '#9aa0a8', O: '#160c18' },
+  rows: [
+    '.OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.',
+    'OssssssssssssssssssssssssssssssssssssssssO',
+    'OgggwwwgggwwwgggwwwgggwwwgggwwwgggwwwgggwO',
+    'OgggwwwgggwwwgggwwwgggwwwgggwwwgggwwwgggwO',
+    'OGGGWWWGGGWWWGGGWWWGGGWWWGGGWWWGGGWWWGGGWO',
+    'OGGOWWOGGOWWOGGOWWOGGOWWOGGOWWOGGOWWOGGOWO',
+    '.OO.OO.OO.OO.OO.OO.OO.OO.OO.OO.OO.OO.OO.O.',
+  ],
+}
+
+export const FELIPE_WINDOWL: Pattern = {
+  palette: { W: '#cfd2d6', k: '#1a1416', s: '#9aa0a8', v: '#245a3a', V: '#173f28', q: '#3a8a5a', E: '#86b8c8', r: '#a01a30', a: '#d98a1e', o: '#3fae4f', O: '#160c18', p: '#f0e0b0', t: '#e05a3a' },
+  rows: [
+    '.OOOOOOOOOO.',
+    'OqqqqqqqqqVO',
+    'OvEEkkkkkkVO',
+    'OvkOOrkOOkVO',
+    'OvkWWWkWWkVO',
+    'OvkoarkoakVO',
+    'OvkoarkoakVO',
+    'OvssssssssVO',
+    'OvkptptptkVO',
+    'OqqqqqqqqqqO',
+    'OVVVVVVVVVVO',
+    '.OOOOOOOOOO.',
+  ],
+}
+
+export const FELIPE_WINDOWR: Pattern = {
+  palette: { W: '#cfd2d6', k: '#1a1416', s: '#9aa0a8', v: '#245a3a', V: '#173f28', q: '#3a8a5a', E: '#86b8c8', r: '#a01a30', a: '#d98a1e', o: '#3fae4f', O: '#160c18', p: '#f0e0b0', t: '#e05a3a' },
+  rows: [
+    '.OOOOOOOOOO.',
+    'OqqqqqqqqqVO',
+    'OvEEkkkkkkVO',
+    'OvkOOrkOOkVO',
+    'OvkWWWkWWkVO',
+    'OvkoarkoakVO',
+    'OvkoarkoakVO',
+    'OvssssssssVO',
+    'OvkptptptkVO',
+    'OqqqqqqqqqqO',
+    'OVVVVVVVVVVO',
+    '.OOOOOOOOOO.',
+  ],
+}
+
+export const FELIPE_FACADE: Pattern = {
+  palette: { w: '#f4f4f2', k: '#1a1416', s: '#9aa0a8', v: '#245a3a', V: '#173f28', q: '#3a8a5a', c: '#c9b48a', C: '#a8936a', z: '#ddcca4', d: '#6b3b1e', D: '#4a2812', e: '#bfe2ee', E: '#86b8c8', R: '#ffcf5a', O: '#160c18', L: '#ffe9a0', l: '#c8a040' },
+  rows: [
+    '.OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.',
+    'OVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVO',
+    'OvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvO',
+    'OCkkkkkkkkkkkkcCccczccCccccckkkkkkkkkkkkcO',
+    'OCkkkkkkkkkkkkLCqqqqqqqqqVCLkkkkkkkkkkkkCO',
+    'OckkkkkkkkkkkklzvdddDdddDVClkkkkkkkkkkkkCO',
+    'OckkkkkkkkkkkklcvdweDdweDVClkkkkkkkkkkkkCO',
+    'OCkkkkkkkkkkkklCvdeEDdeEDVClkkkkkkkkkkkkCO',
+    'OckkkkkkkkkkkkccvdeEDdeEDVcckkkkkkkkkkkkcO',
+    'OckkkkkkkkkkkkccvdeEDdeEDVcckkkkkkkkkkkkzO',
+    'OCkkkkkkkkkkkkCCvdddDdddDVCCkkkkkkkkkkkkCO',
+    'OckkkkkkkkkkkkzcvddRDdRdDVcCkkkkkkkkkkkkcO',
+    'OzkkkkkkkkkkkkccvdddDdddDVcCkkkkkkkkkkkkcO',
+    'OCCCCCCCCCCCCCCCvdddDdddDVCCCCCCCCCCCCCCCO',
+    'OqqqqqqqqqqqqqqqvdddDdddDVqqqqqqqqqqqqqqqO',
+    'OvvvvvvvvvvvvvvssssssssssssvvvvvvvvvvvvvvO',
+    '.OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.',
+  ],
+}

@@ -73,7 +73,7 @@ export const YELLOW_COOLDOWN_FACTOR = 0.5
 
 /** Ice-cream truck boss every 10 levels. */
 export const BOSS_EVERY = 10
-export const TRUCK_VOXEL = 0.11
+export const TRUCK_VOXEL = 0.1
 export const boss = (level: number) => {
   const n = Math.max(1, Math.floor(level / BOSS_EVERY)) // 1st, 2nd… boss
   return {
