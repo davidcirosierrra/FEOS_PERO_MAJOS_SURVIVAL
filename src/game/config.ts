@@ -4,10 +4,10 @@ const interactionGroups = (member: number, filter: number[]) => ((bits([member])
 
 export const VOXEL = 0.15
 /** Player character voxel size and how much wider it gets per hit (it eats what it's hit with). */
-export const CHAR_VOXEL = 0.085
+export const CHAR_VOXEL = 0.056
 export const STAGE_WIDTH = [1, 1.25, 1.5]
-export const FAN_VOXEL = 0.095
-export const FOOD_VOXEL = 0.1
+export const FAN_VOXEL = 0.064
+export const FOOD_VOXEL = 0.07
 
 export const LIVES = 3
 /** Hits per life. Stage 0..2 are the ship getting fatter; the 3rd hit costs a life. */

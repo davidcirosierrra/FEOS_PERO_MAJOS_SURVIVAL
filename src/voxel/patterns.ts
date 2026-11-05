@@ -220,3 +220,12 @@ export function grayPattern(p: Pattern): Pattern {
   grayCache.set(p, gray)
   return gray
 }
+
+/** Pads a pattern by 1 and draws a dark 1px outline around it (readability on the busy floor). */
+export function outlined(p: Pattern, color = '#160c18'): Pattern {
+  const w = Math.max(...p.rows.map((r) => r.length)) + 2
+  const grid = [Array(w).fill('.'), ...p.rows.map((r) => ['.', ...r.padEnd(w - 2, '.'), '.']), Array(w).fill('.')]
+  const filled = (x: number, y: number) => grid[y]?.[x] !== undefined && grid[y][x] !== '.' && grid[y][x] !== '~'
+  const out = grid.map((row, y) => row.map((c, x) => (c === '.' && (filled(x + 1, y) || filled(x - 1, y) || filled(x, y + 1) || filled(x, y - 1)) ? '~' : c)))
+  return { palette: { ...p.palette, '~': color }, rows: out.map((r) => r.join('')) }
+}

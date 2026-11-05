@@ -9,10 +9,10 @@ import { BANANA_EVERY_MS, GROUPS, MEDAL_EVERY_MS } from './config'
 import { field, nextMedal, useGame, type Pickup as PickupT, type PickupKind } from './store'
 
 const LOOK: Record<PickupKind, { pattern: Pattern; size: number; glow: string; ring: string }> = {
-  banana: { pattern: KALIMOTXO, size: 0.11, glow: '255,90,120', ring: '#ffd1e6' },
-  red: { pattern: PICKS.red, size: 0.12, glow: MEDAL_COLORS.red.glow, ring: '#ffd1d8' },
-  blue: { pattern: PICKS.blue, size: 0.12, glow: MEDAL_COLORS.blue.glow, ring: '#cfe8ff' },
-  yellow: { pattern: PICKS.yellow, size: 0.12, glow: MEDAL_COLORS.yellow.glow, ring: '#fff59d' },
+  banana: { pattern: KALIMOTXO, size: 0.1, glow: '255,90,120', ring: '#ffd1e6' },
+  red: { pattern: PICKS.red, size: 0.085, glow: MEDAL_COLORS.red.glow, ring: '#ffd1d8' },
+  blue: { pattern: PICKS.blue, size: 0.085, glow: MEDAL_COLORS.blue.glow, ring: '#cfe8ff' },
+  yellow: { pattern: PICKS.yellow, size: 0.085, glow: MEDAL_COLORS.yellow.glow, ring: '#fff59d' },
 }
 
 /** Soft round glow texture per colour, generated once. */

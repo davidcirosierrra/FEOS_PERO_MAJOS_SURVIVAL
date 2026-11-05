@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# sprite previews
+scripts/sprites/*.png
+scripts/sprites/*.ts
+scripts/sprites/tile.txt
+scripts/sprites/__pycache__

@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import { bilbaoTileCanvas } from '../voxel/theme'
 
 /** World size of one tile. */
-const TILE = 1.7
+const TILE = 2.6
 const W = 48
 const H = 60
 /** A bit behind the play plane so shot-down stuff can "fall" towards it. */
@@ -13,7 +13,7 @@ const Z = -4
 /** Scrolling Bilbao-tile pavement: the band is walking towards the stage. */
 export function Floor({ speed = 2 }: { speed?: number }) {
   const tex = useMemo(() => {
-    const t = new THREE.CanvasTexture(bilbaoTileCanvas(32))
+    const t = new THREE.CanvasTexture(bilbaoTileCanvas())
     t.magFilter = THREE.NearestFilter
     t.minFilter = THREE.NearestFilter
     t.generateMipmaps = false
@@ -31,7 +31,7 @@ export function Floor({ speed = 2 }: { speed?: number }) {
   return (
     <mesh position={[0, 0, Z]}>
       <planeGeometry args={[W, H]} />
-      <meshBasicMaterial map={tex} color="#b4b7bc" />
+      <meshBasicMaterial map={tex} color="#a2a5aa" />
     </mesh>
   )
 }

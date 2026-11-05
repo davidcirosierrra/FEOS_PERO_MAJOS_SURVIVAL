@@ -2,7 +2,7 @@ import { Canvas } from '@react-three/fiber'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 /** Render width in real pixels: low on purpose for the 8-bit look (CSS upscales with `pixelated`). */
-const TARGET_WIDTH = 260
+const TARGET_WIDTH = 340
 /** Further away = everything smaller and a wider playfield. */
 export const CAMERA_Z = 25
 export const FOV = 50
