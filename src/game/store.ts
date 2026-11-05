@@ -1,12 +1,18 @@
 import { create } from 'zustand'
 import { loadHighScore, saveHighScore } from '../storage'
-import { FOOD_KINDS } from '../voxel/patterns'
+import { FOOD_KINDS, MEDAL_KINDS, type MedalKind } from '../voxel/patterns'
 import {
   HITS_PER_LIFE,
   INVULN_MS,
   LIVES,
   RESPAWN_INVULN_MS,
+  BLUE_SPREAD,
+  HITS_PER_MEDAL_LOSS,
+  MEDAL_SPEED_FACTOR,
   SCORE_BANANA_FULL,
+  SCORE_MEDAL_DUP,
+  YELLOW_COOLDOWN_FACTOR,
+  BANANA_SPEED,
   SCORE_PER_DEFLECT,
   SCORE_PER_FOOD,
   SCORE_PER_KILL,
@@ -23,6 +29,8 @@ export type Screen = 'home' | 'game'
 export type Enemy = { id: number; slotX: number; slotY: number; phase: number; delay: number }
 export type Shot = { id: number; x: number; y: number }
 export type FoodShot = Shot & { kind: string; speed: number }
+export type PickupKind = 'banana' | MedalKind
+export type Pickup = Shot & { kind: PickupKind; speed: number }
 export type Explosion = { id: number; x: number; y: number; colors: string[]; big?: boolean }
 
 /** Playfield half-size in world units, set by the game scene from the viewport. */
@@ -54,7 +62,11 @@ type State = {
   playerShots: Shot[]
   enemyShots: FoodShot[]
   explosions: Explosion[]
-  bananas: Shot[]
+  pickups: Pickup[]
+  /** Medals held, in the order they were earned. */
+  medals: MedalKind[]
+  /** Hits taken since the last medal was lost (only counts while holding medals). */
+  medalHits: number
 
   setScreen: (s: Screen) => void
   startGame: () => void
@@ -64,16 +76,17 @@ type State = {
   openUmbrella: () => void
   jump: () => void
   deflect: (shotId: number) => void
-  shootFood: (foodId: number, shotId: number) => boolean
+  /** Returns 'pierce' (red medal: the laser goes on), 'hit' (laser used up) or null. */
+  shootFood: (foodId: number, shotId: number) => 'pierce' | 'hit' | null
   removePlayerShot: (id: number) => void
   enemyFire: (x: number, y: number) => void
   removeEnemyShot: (id: number) => void
   hitPlayer: (shotId: number) => void
   killEnemy: (enemyId: number, shotId: number, x: number, y: number) => void
   removeExplosion: (id: number) => void
-  spawnBanana: () => void
-  removeBanana: (id: number) => void
-  catchBanana: (id: number) => void
+  spawnPickup: (kind: PickupKind) => void
+  removePickup: (id: number) => void
+  catchPickup: (id: number) => void
 }
 
 const vibrate = (p: number | number[]) => {
@@ -105,7 +118,9 @@ export const useGame = create<State>((set, get) => ({
   playerShots: [],
   enemyShots: [],
   explosions: [],
-  bananas: [],
+  pickups: [],
+  medals: [],
+  medalHits: 0,
 
   setScreen: (screen) => set({ screen }),
 
@@ -130,7 +145,9 @@ export const useGame = create<State>((set, get) => ({
       playerShots: [],
       enemyShots: [],
       explosions: [],
-      bananas: [],
+      pickups: [],
+      medals: [],
+      medalHits: 0,
     })),
 
   nextWave: () => {
@@ -163,8 +180,16 @@ export const useGame = create<State>((set, get) => ({
     const s = get()
     if (s.gameOver || s.screen !== 'game') return
     const now = performance.now()
-    if (now - s.lastShot < STAGES[s.stage].fireCooldown) return
-    set({ lastShot: now, playerShots: [...s.playerShots, { id: id(), x: playerState.x, y: field.playerY + 0.7 }] })
+    const cooldown = STAGES[s.stage].fireCooldown * (s.medals.includes('yellow') ? YELLOW_COOLDOWN_FACTOR : 1)
+    if (now - s.lastShot < cooldown) return
+    const y = field.playerY + 0.7
+    const shots = s.medals.includes('blue')
+      ? [
+          { id: id(), x: playerState.x - BLUE_SPREAD, y },
+          { id: id(), x: playerState.x + BLUE_SPREAD, y },
+        ]
+      : [{ id: id(), x: playerState.x, y }]
+    set({ lastShot: now, playerShots: [...s.playerShots, ...shots] })
   },
 
   openUmbrella: () => {
@@ -187,16 +212,17 @@ export const useGame = create<State>((set, get) => ({
     set({ jumpStart: now, jumpReadyAt: now + JUMP_CHARGE_MS })
   },
 
-  /** Player laser hits food: the laser is used up, the food stays (it falls away in the scene). */
+  /** Player laser hits food. The food stays in the list (it falls away in the scene). */
   shootFood: (foodId, shotId) => {
     const s = get()
-    if (s.gameOver || !s.enemyShots.some((e) => e.id === foodId) || !s.playerShots.some((p) => p.id === shotId)) return false
+    if (s.gameOver || !s.enemyShots.some((e) => e.id === foodId) || !s.playerShots.some((p) => p.id === shotId)) return null
     vibrate(10)
+    const pierce = s.medals.includes('red')
     set({
-      playerShots: s.playerShots.filter((p) => p.id !== shotId),
+      playerShots: pierce ? s.playerShots : s.playerShots.filter((p) => p.id !== shotId),
       score: s.score + SCORE_PER_FOOD * Math.max(1, s.wave),
     })
-    return true
+    return pierce ? 'pierce' : 'hit'
   },
 
   deflect: (sid) => {
@@ -225,6 +251,15 @@ export const useGame = create<State>((set, get) => ({
     const enemyShots = s.enemyShots.filter((e) => e.id !== shotId)
     const now = performance.now()
     if (s.gameOver || now < s.invulnUntil) return set({ enemyShots })
+
+    // Every 2 hits while holding medals, the most recently earned one is lost.
+    if (s.medals.length) {
+      const medalHits = s.medalHits + 1
+      if (medalHits >= HITS_PER_MEDAL_LOSS) {
+        const lost = s.medals[s.medals.length - 1]
+        set({ medals: s.medals.slice(0, -1), medalHits: 0, banner: `${lost.toUpperCase()} LOST` })
+      } else set({ medalHits })
+    }
 
     const hits = s.stage + 1
     if (hits < HITS_PER_LIFE) {
@@ -272,29 +307,44 @@ export const useGame = create<State>((set, get) => ({
     })
   },
 
-  spawnBanana: () => {
+  spawnPickup: (kind) => {
     const s = get()
     if (s.gameOver || s.screen !== 'game') return
     const x = (Math.random() * 2 - 1) * (field.halfW - 0.8)
-    set({ bananas: [...s.bananas, { id: id(), x, y: field.halfH + 1 }] })
+    const speed = kind === 'banana' ? BANANA_SPEED : waveCfg(Math.max(1, s.wave)).shotSpeed * MEDAL_SPEED_FACTOR
+    set({ pickups: [...s.pickups, { id: id(), x, y: field.halfH + 1, kind, speed }] })
   },
 
-  removeBanana: (bid) => set((s) => ({ bananas: s.bananas.filter((b) => b.id !== bid) })),
+  removePickup: (pid) => set((s) => ({ pickups: s.pickups.filter((p) => p.id !== pid) })),
 
-  catchBanana: (bid) => {
+  catchPickup: (pid) => {
     const s = get()
-    if (s.gameOver || !s.bananas.some((b) => b.id === bid)) return
+    const p = s.pickups.find((q) => q.id === pid)
+    if (s.gameOver || !p) return
     vibrate([20, 40, 20])
-    const bananas = s.bananas.filter((b) => b.id !== bid)
-    const sparkle = { id: id(), x: playerState.x, y: field.playerY + 0.4, colors: ['#ffe14d', '#fff59d', '#ffffff'] }
-    if (s.stage > 0) {
-      set({ bananas, stage: s.stage - 1, banner: 'HULL +1', explosions: [...s.explosions, sparkle] })
-    } else {
-      set({ bananas, score: s.score + SCORE_BANANA_FULL, banner: `+${SCORE_BANANA_FULL}`, explosions: [...s.explosions, sparkle] })
+    const pickups = s.pickups.filter((q) => q.id !== pid)
+    const colors = p.kind === 'banana' ? ['#ffe14d', '#fff59d', '#ffffff'] : [MEDAL_SPARK[p.kind], '#ffffff']
+    const explosions = [...s.explosions, { id: id(), x: playerState.x, y: field.playerY + 0.4, colors }]
+    if (p.kind === 'banana') {
+      if (s.stage > 0) return set({ pickups, explosions, stage: s.stage - 1, banner: 'HULL +1' })
+      return set({ pickups, explosions, score: s.score + SCORE_BANANA_FULL, banner: `+${SCORE_BANANA_FULL}` })
     }
+    if (s.medals.includes(p.kind)) {
+      return set({ pickups, explosions, score: s.score + SCORE_MEDAL_DUP, banner: `+${SCORE_MEDAL_DUP}` })
+    }
+    set({ pickups, explosions, medals: [...s.medals, p.kind], banner: `${p.kind.toUpperCase()} MEDAL` })
   },
 
   removeExplosion: (eid) => set((s) => ({ explosions: s.explosions.filter((e) => e.id !== eid) })),
 }))
+
+const MEDAL_SPARK: Record<MedalKind, string> = { red: '#ff3d5a', blue: '#3da5ff', yellow: '#ffe14d' }
+
+/** Medal to drop next: one the player doesn't have yet (any, if they have them all). */
+export function nextMedal(owned: MedalKind[]): MedalKind {
+  const missing = MEDAL_KINDS.filter((k) => !owned.includes(k))
+  const pool = missing.length ? missing : MEDAL_KINDS
+  return pool[Math.floor(Math.random() * pool.length)]
+}
 
 export const isJumping = (now = performance.now()) => now - useGame.getState().jumpStart < JUMP_MS

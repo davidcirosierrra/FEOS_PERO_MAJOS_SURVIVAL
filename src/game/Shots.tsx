@@ -1,9 +1,10 @@
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
 import { memo, useMemo, useRef } from 'react'
+import * as THREE from 'three'
 import { FOOD, LASER, patternSize } from '../voxel/patterns'
 import { Voxel } from '../voxel/Voxel'
-import { FOOD_VOXEL, GROUPS, PLAYER_SHOT_SPEED } from './config'
+import { FOOD_VOXEL, GROUPS, PLAYER_SHOT_SPEED, RED_DEFLECT_DEG } from './config'
 import { field, useGame, type FoodShot, type Shot } from './store'
 
 // Velocity props are only meant as the *initial* velocity: keep them referentially stable (and the
@@ -15,7 +16,8 @@ const PlayerShot = memo(function PlayerShot({ s }: { s: Shot }) {
   const remove = useGame((st) => st.removePlayerShot)
   useFrame(() => {
     const b = body.current
-    if (b && b.translation().y > field.halfH + 1) remove(s.id)
+    const p = b?.translation()
+    if (p && (p.y > field.halfH + 1 || Math.abs(p.x) > field.halfW + 1)) remove(s.id)
   })
   return (
     <RigidBody
@@ -38,6 +40,7 @@ const PlayerShot = memo(function PlayerShot({ s }: { s: Shot }) {
 /** Shot-down food falls along -z (away from the camera) at this speed and is removed past this depth. */
 const FALL_SPEED = 14
 const FALL_GONE_Z = 45
+const Z_AXIS = new THREE.Vector3(0, 0, 1)
 
 const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
   const body = useRef<RapierRigidBody>(null)
@@ -72,15 +75,32 @@ const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
         const shot = other.rigidBodyObject?.userData as { kind?: string; id?: number } | undefined
         const b = body.current
         if (!ud || ud.falling || !b || shot?.kind !== 'playerShot' || shot.id == null) return
-        if (!shootFood(s.id, shot.id)) return
-        // Shot down: harmless, no more collisions, tumbles away from the camera until it vanishes.
+        const result = shootFood(s.id, shot.id)
+        if (!result) return
+        // Shot down: harmless and no more collisions from now on.
         ud.deflected = ud.falling = true
         for (let i = 0; i < b.numColliders(); i++) b.collider(i).setCollisionGroups(0)
-        b.setGravityScale(0, true)
-        const v = b.linvel()
-        b.setLinvel({ x: v.x * 0.3 + (Math.random() - 0.5) * 2, y: v.y * 0.3 + 1.5, z: -FALL_SPEED }, true)
         b.setEnabledRotations(true, true, true, true)
         b.setAngvel({ x: (Math.random() - 0.5) * 16, y: (Math.random() - 0.5) * 16, z: (Math.random() - 0.5) * 16 }, true)
+        const v = b.linvel()
+        if (result === 'hit') {
+          // Plain laser: the food tumbles away from the camera until it vanishes.
+          b.setGravityScale(0, true)
+          b.setLinvel({ x: v.x * 0.3 + (Math.random() - 0.5) * 2, y: v.y * 0.3 + 1.5, z: -FALL_SPEED }, true)
+          return
+        }
+        // Red medal: knocked straight down, and the laser carries on upwards at an angle.
+        b.setGravityScale(1.5, true)
+        b.setLinvel({ x: (Math.random() - 0.5) * 2, y: -Math.max(Math.abs(v.y), 6) - 3, z: 0 }, true)
+        const laser = other.rigidBody
+        if (laser) {
+          const lp = laser.translation()
+          const side = Math.sign(lp.x - b.translation().x) || (Math.random() < 0.5 ? -1 : 1)
+          const [a0, a1] = RED_DEFLECT_DEG
+          const a = (side * (a0 + Math.random() * (a1 - a0)) * Math.PI) / 180
+          laser.setLinvel({ x: Math.sin(a) * PLAYER_SHOT_SPEED, y: Math.cos(a) * PLAYER_SHOT_SPEED, z: 0 }, true)
+          laser.setRotation(new THREE.Quaternion().setFromAxisAngle(Z_AXIS, -a), true)
+        }
       }}
       onCollisionEnter={({ other, target }) => {
         const ud = target.rigidBodyObject?.userData as { deflected?: boolean } | undefined

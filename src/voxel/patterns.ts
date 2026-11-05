@@ -179,3 +179,21 @@ export const BANANA: Pattern = {
     '..YYYYY.....',
   ],
 }
+
+export type MedalKind = 'red' | 'blue' | 'yellow'
+export const MEDAL_KINDS: MedalKind[] = ['red', 'blue', 'yellow']
+
+/** Disc colour, ribbon (darker) and glow per medal. */
+export const MEDAL_COLORS: Record<MedalKind, { disc: string; ribbon: string; glow: string }> = {
+  red: { disc: '#ff3d5a', ribbon: '#9c1028', glow: '255,61,90' },
+  blue: { disc: '#3da5ff', ribbon: '#174f9c', glow: '61,165,255' },
+  yellow: { disc: '#ffe14d', ribbon: '#a8820c', glow: '255,225,77' },
+}
+
+const medal = (k: MedalKind): Pattern => ({
+  palette: { b: MEDAL_COLORS[k].ribbon, g: MEDAL_COLORS[k].disc, w: '#ffffff' },
+  rows: ['bb...bb', '.bb.bb.', '..bbb..', '..ggg..', '.gwggg.', '.gwggg.', '.ggggg.', '..ggg..'],
+})
+
+/** Shot power-up medals. */
+export const MEDALS: Record<MedalKind, Pattern> = { red: medal('red'), blue: medal('blue'), yellow: medal('yellow') }

@@ -435,3 +435,23 @@ body,
     transform: translateX(100%);
   }
 }
+
+.medals {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+.medals svg {
+  opacity: 0.18;
+  filter: grayscale(1);
+}
+.medals svg.on {
+  opacity: 1;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.6));
+}
+@media (max-width: 390px) {
+  .medals svg {
+    width: 9px;
+    height: auto;
+  }
+}

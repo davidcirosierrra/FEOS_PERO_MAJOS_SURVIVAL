@@ -80,6 +80,7 @@ export function Home() {
         <p>SWIPE UP: LOOP</p>
         <p>SWIPE DOWN: UMBRELLA</p>
         <p className="dim">3 HITS = 1 LIFE</p>
+        <p className="dim">RED PIERCE · BLUE x2 · YELLOW FAST</p>
       </div>
     </div>
   )

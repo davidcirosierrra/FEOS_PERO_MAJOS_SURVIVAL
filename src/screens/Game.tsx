@@ -1,7 +1,7 @@
 import { useThree } from '@react-three/fiber'
 import { Physics } from '@react-three/rapier'
 import { useEffect, useRef, useState } from 'react'
-import { BananaDropper, Bananas } from '../game/Banana'
+import { PickupDropper, Pickups } from '../game/Pickups'
 import { Director } from '../game/Director'
 import { Enemies } from '../game/Enemy'
 import { Explosions } from '../game/Explosions'
@@ -34,7 +34,7 @@ function World() {
       <UmbrellaSlot />
       <Enemies />
       <Shots />
-      <Bananas />
+      <Pickups />
       <Explosions />
     </Physics>
   )
@@ -94,7 +94,7 @@ export function Game() {
       </PixelCanvas>
       <Hud />
       <Director />
-      <BananaDropper />
+      <PickupDropper />
       {gameOver && <GameOver />}
     </div>
   )

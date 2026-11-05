@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { sensorAlive } from '../input'
 import { PixelSprite } from '../components/PixelSprite'
 import { pad } from '../storage'
-import { ALIEN_ICON } from '../voxel/patterns'
+import { ALIEN_ICON, MEDAL_KINDS, MEDALS } from '../voxel/patterns'
 import { HITS_PER_LIFE, JUMP_CHARGE_MS, UMBRELLA_COOLDOWN_MS } from './config'
 import { useGame } from './store'
 
@@ -48,6 +48,7 @@ export function Hud() {
             <i key={i} className={i < HITS_PER_LIFE - stage ? 'on' : ''} />
           ))}
         </div>
+        <Medals />
         <div className="meters">
           <Meter label="UMB" readyKey="umbrellaReadyAt" total={UMBRELLA_COOLDOWN_MS} className="umb" />
           <Meter label="LOOP" readyKey="jumpReadyAt" total={JUMP_CHARGE_MS} className="jump" />
@@ -111,6 +112,18 @@ function Meter({ label, readyKey, total, className }: { label: string; readyKey:
       <span className="meter-track">
         <i ref={bar} />
       </span>
+    </div>
+  )
+}
+
+/** Shot medals held (lit) / missing (dim). */
+function Medals() {
+  const medals = useGame((s) => s.medals)
+  return (
+    <div className="medals">
+      {MEDAL_KINDS.map((k) => (
+        <PixelSprite key={k} pattern={MEDALS[k]} scale={1.6} className={medals.includes(k) ? 'on' : ''} />
+      ))}
     </div>
   )
 }

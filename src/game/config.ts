@@ -54,6 +54,21 @@ export const BANANA_SPEED = 2.2
 /** Points when caught with the hull already intact. */
 export const SCORE_BANANA_FULL = 250
 
+/**
+ * Shot medals (falling power-ups, faster than food):
+ *  red    – piercing: knocks food down and the laser carries on upwards at an angle
+ *  blue   – two parallel lasers
+ *  yellow – double fire rate
+ * They stack. While holding medals, every 2 hits costs the most recently earned one.
+ */
+export const MEDAL_EVERY_MS: [number, number] = [12000, 20000]
+export const MEDAL_SPEED_FACTOR = 1.5
+export const HITS_PER_MEDAL_LOSS = 2
+export const SCORE_MEDAL_DUP = 300
+export const RED_DEFLECT_DEG: [number, number] = [20, 35]
+export const BLUE_SPREAD = 0.24
+export const YELLOW_COOLDOWN_FACTOR = 0.5
+
 /** Collision groups. */
 const G = { player: 0, playerShot: 1, enemy: 2, enemyShot: 3, wall: 4, debris: 5, foodSolid: 6, umbrella: 7, powerup: 8 }
 export const GROUPS = {
