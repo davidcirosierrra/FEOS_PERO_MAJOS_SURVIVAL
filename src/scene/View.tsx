@@ -120,7 +120,7 @@ export function CameraRig() {
   if (!eyes) return null
   return (
     <>
-      <color attach="background" args={['#2a1a30']} />
+      <color attach="background" args={['#05030c']} />
       <fog attach="fog" args={['#2a1a30', 14, 40]} />
       <Scenery />
       <group ref={rifle}>

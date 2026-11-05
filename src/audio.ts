@@ -89,6 +89,64 @@ const fx = (fn: (t: number) => void) => {
   fn(now())
 }
 
+// ---------------------------------------------------------------- voice
+
+/**
+ * Synthesised scream: a buzzy glottal source (saw) with pitch slide + vibrato, shaped into a vowel
+ * by parallel formant filters, plus breath noise. `pig` = high squeal, otherwise a gruff "AAARGH".
+ */
+function scream(t: number, pig: boolean, long: boolean) {
+  if (!ctx) return
+  const dur = long ? 0.9 : 0.5
+  const src = ctx.createOscillator()
+  src.type = 'sawtooth'
+  const f = pig ? [700, 1500, 900] : [210, 330, 160]
+  src.frequency.setValueAtTime(f[0], t)
+  src.frequency.exponentialRampToValueAtTime(f[1], t + dur * 0.18)
+  src.frequency.exponentialRampToValueAtTime(f[2], t + dur)
+  // vibrato / roughness
+  const lfo = ctx.createOscillator()
+  lfo.frequency.value = pig ? 13 : 7
+  const lfoGain = ctx.createGain()
+  lfoGain.gain.value = pig ? 60 : 14
+  lfo.connect(lfoGain).connect(src.frequency)
+
+  const out = ctx.createGain()
+  out.gain.setValueAtTime(0.0001, t)
+  out.gain.exponentialRampToValueAtTime(pig ? 0.5 : 0.75, t + 0.03)
+  out.gain.setValueAtTime(pig ? 0.5 : 0.75, t + dur * 0.6)
+  out.gain.exponentialRampToValueAtTime(0.0001, t + dur)
+  out.connect(sfxBus)
+
+  // vowel "aa" (a bit of "e" for the pig's squeal)
+  const formants: [number, number, number][] = pig
+    ? [
+        [1100, 6, 1],
+        [2600, 8, 0.6],
+        [3800, 10, 0.3],
+      ]
+    : [
+        [750, 5, 1],
+        [1200, 7, 0.7],
+        [2600, 9, 0.25],
+      ]
+  for (const [freq, q, gain] of formants) {
+    const bp = ctx.createBiquadFilter()
+    bp.type = 'bandpass'
+    bp.frequency.value = freq
+    bp.Q.value = q
+    const g = ctx.createGain()
+    g.gain.value = gain * 2.2
+    src.connect(bp).connect(g).connect(out)
+  }
+  // throat noise
+  noise(sfxBus, t, dur * 0.9, pig ? 0.05 : 0.09, 'bandpass', pig ? 2400 : 1100)
+  src.start(t)
+  lfo.start(t)
+  src.stop(t + dur + 0.05)
+  lfo.stop(t + dur + 0.05)
+}
+
 // ---------------------------------------------------------------- sound effects
 
 let lastShoot = 0
@@ -122,13 +180,15 @@ export const sfx = {
       tone(sfxBus, 200, t, 0.55, 'square', 0.08, 1600)
       tone(sfxBus, 300, t + 0.05, 0.5, 'triangle', 0.1, 2400)
     }),
+  /** Hit by something: the character screams. */
   hurt: () =>
     fx((t) => {
-      tone(sfxBus, 400, t, 0.25, 'sawtooth', 0.12, 90)
-      noise(sfxBus, t, 0.15, 0.3, 'lowpass', 1200)
+      noise(sfxBus, t, 0.08, 0.3, 'lowpass', 1500) // thud
+      scream(t + 0.02, useSettings.getState().character === 'pig', false)
     }),
   lifeLost: () =>
     fx((t) => {
+      scream(t, useSettings.getState().character === 'pig', true)
       noise(sfxBus, t, 0.6, 0.6, 'lowpass', 3000, 120)
       ;[523, 392, 311, 233].forEach((f, i) => tone(sfxBus, f, t + i * 0.11, 0.14, 'square', 0.1))
     }),

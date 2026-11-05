@@ -91,8 +91,68 @@ function Stage() {
 export function Scenery({ speed = 2.2 }: { speed?: number }) {
   return (
     <>
+      <Sky />
       <Walls speed={speed} />
       <Stage />
     </>
+  )
+}
+
+/** Night sky for first person: gradient dome + twinkling stars that follow the camera. */
+export function Sky() {
+  const group = useRef<THREE.Group>(null)
+  const dome = useMemo(() => {
+    const c = document.createElement('canvas')
+    c.width = 4
+    c.height = 128
+    const g = c.getContext('2d')!
+    const grd = g.createLinearGradient(0, 0, 0, 128)
+    grd.addColorStop(0, '#05030c') // zenith
+    grd.addColorStop(0.42, '#140a24')
+    grd.addColorStop(0.5, '#3a1d40') // warm glow on the horizon (city + stage lights)
+    grd.addColorStop(1, '#2a1a30')
+    g.fillStyle = grd
+    g.fillRect(0, 0, 4, 128)
+    const t = new THREE.CanvasTexture(c)
+    t.colorSpace = THREE.SRGBColorSpace
+    return t
+  }, [])
+  const { positions, colors } = useMemo(() => {
+    const n = 420
+    const positions = new Float32Array(n * 3)
+    const colors = new Float32Array(n * 3)
+    const col = new THREE.Color()
+    const tints = ['#ffffff', '#fff3c4', '#cfe0ff', '#ffd1e6']
+    for (let i = 0; i < n; i++) {
+      // random direction in the upper hemisphere (z is up), a few degrees above the horizon
+      const az = Math.random() * Math.PI * 2
+      const el = 0.06 + Math.asin(Math.random()) * 0.94
+      const r = 85
+      positions.set([Math.cos(az) * Math.cos(el) * r, Math.sin(az) * Math.cos(el) * r, Math.sin(el) * r], i * 3)
+      col.set(tints[i % tints.length]).multiplyScalar(0.6 + Math.random() * 0.4)
+      colors.set([col.r, col.g, col.b], i * 3)
+    }
+    return { positions, colors }
+  }, [])
+  const stars = useRef<THREE.PointsMaterial>(null)
+  useFrame((state) => {
+    // centred on the camera so the sky is infinitely far away
+    group.current?.position.copy(state.camera.position)
+    if (stars.current) stars.current.opacity = 0.85 + Math.sin(state.clock.elapsedTime * 3) * 0.15
+  })
+  return (
+    <group ref={group}>
+      <mesh rotation={[Math.PI / 2, 0, 0]} renderOrder={-2}>
+        <sphereGeometry args={[95, 16, 16]} />
+        <meshBasicMaterial map={dome} side={THREE.BackSide} fog={false} depthWrite={false} />
+      </mesh>
+      <points renderOrder={-1}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+          <bufferAttribute attach="attributes-color" args={[colors, 3]} />
+        </bufferGeometry>
+        <pointsMaterial ref={stars} size={2} sizeAttenuation={false} vertexColors fog={false} transparent depthWrite={false} />
+      </points>
+    </group>
   )
 }
