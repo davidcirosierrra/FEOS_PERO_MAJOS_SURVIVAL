@@ -159,6 +159,33 @@ export const sfx = {
       tone(sfxBus, base, t, 0.09, 'square', 0.09, base / 3)
       if (medals.includes('blue')) tone(sfxBus, base * 1.5, t + 0.01, 0.07, 'square', 0.05, base / 2)
     }),
+  /** Short offended grunt from a fan. */
+  grumble: () =>
+    fx((t) => {
+      if (!ctx) return
+      const o = ctx.createOscillator()
+      o.type = 'sawtooth'
+      const f0 = 140 + Math.random() * 120
+      o.frequency.setValueAtTime(f0 * 1.3, t)
+      o.frequency.exponentialRampToValueAtTime(f0 * 0.8, t + 0.28)
+      const g = ctx.createGain()
+      g.gain.setValueAtTime(0.0001, t)
+      g.gain.exponentialRampToValueAtTime(0.35, t + 0.02)
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3)
+      for (const [fq, q] of [
+        [600, 6],
+        [1050, 8],
+      ]) {
+        const bp = ctx.createBiquadFilter()
+        bp.type = 'bandpass'
+        bp.frequency.value = fq
+        bp.Q.value = q
+        o.connect(bp).connect(g)
+      }
+      g.connect(sfxBus)
+      o.start(t)
+      o.stop(t + 0.32)
+    }),
   explode: () =>
     fx((t) => {
       noise(sfxBus, t, 0.35, 0.5, 'lowpass', 2400, 200)

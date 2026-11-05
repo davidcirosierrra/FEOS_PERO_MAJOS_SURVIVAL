@@ -76,6 +76,8 @@ type State = {
   enemyShots: FoodShot[]
   explosions: Explosion[]
   pickups: Pickup[]
+  /** Speech bubbles (insults / complaints) from fans that get hit. */
+  quips: { id: number; x: number; y: number; text: string; at: number }[]
   boss: Boss | null
   cookies: Cookie[]
   /** Medals held, in the order they were earned. */
@@ -143,6 +145,7 @@ export const useGame = create<State>((set, get) => ({
   enemyShots: [],
   explosions: [],
   pickups: [],
+  quips: [],
   medals: [],
   medalHits: 0,
   boss: null,
@@ -174,6 +177,7 @@ export const useGame = create<State>((set, get) => ({
       enemyShots: [],
       explosions: [],
       pickups: [],
+      quips: [],
       medals: [],
       medalHits: 0,
       boss: null,
@@ -409,7 +413,11 @@ export const useGame = create<State>((set, get) => ({
     if (!s.enemies.some((e) => e.id === enemyId) || !s.playerShots.some((p) => p.id === shotId)) return
     vibrate(25)
     sfx.explode()
+    sfx.grumble()
+    const now = performance.now()
+    const quip = { id: id(), x, y, text: QUIPS[Math.floor(Math.random() * QUIPS.length)], at: now }
     set({
+      quips: [...s.quips.filter((q) => now - q.at < QUIP_MS), quip],
       enemies: s.enemies.filter((e) => e.id !== enemyId),
       playerShots: s.playerShots.filter((p) => p.id !== shotId),
       score: s.score + SCORE_PER_KILL * s.wave,
@@ -448,6 +456,25 @@ export const useGame = create<State>((set, get) => ({
 
   removeExplosion: (eid) => set((s) => ({ explosions: s.explosions.filter((e) => e.id !== eid) })),
 }))
+
+/** What fans shout when a fork gets them (Basque street talk, nothing too nasty). */
+const QUIPS = [
+  'AIENE!',
+  'OSTIAAA!',
+  'MEKAGUEN!',
+  'TXOTXOLO!',
+  'ERGELA!',
+  'ITSUSIAK!',
+  'TXERRI ZIKINA!',
+  'ZER DEMONTRE?!',
+  'KAKA ZAHARRA!',
+  'ALAJAINKOA!',
+  'EZ DA BIDEZKOA!',
+  'NIRE KAMISETA!',
+  'AUUU!',
+  'HORI MINA!',
+]
+export const QUIP_MS = 1400
 
 const PICK_NAME: Record<MedalKind, string> = { red: 'GORRIA', blue: 'URDINA', yellow: 'HORIA' }
 

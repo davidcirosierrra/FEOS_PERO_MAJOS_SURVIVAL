@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber'
-import { useMemo, useRef } from 'react'
+import { Suspense, useMemo, useRef } from 'react'
 import type * as THREE from 'three'
 import { Floor } from '../scene/Floor'
 import { PixelCanvas } from '../scene/PixelCanvas'
@@ -74,7 +74,9 @@ function Flying() {
 export function Backdrop() {
   return (
     <PixelCanvas>
-      <Floor speed={1} topDown />
+      <Suspense fallback={null}>
+        <Floor speed={1} topDown />
+      </Suspense>
       <Crowd />
       <Flying />
     </PixelCanvas>

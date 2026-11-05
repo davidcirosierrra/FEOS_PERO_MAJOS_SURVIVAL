@@ -1,10 +1,12 @@
 import { useThree } from '@react-three/fiber'
 import { Physics } from '@react-three/rapier'
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { PickupDropper, Pickups } from '../game/Pickups'
 import { BossLayer } from '../game/Boss'
 import { ConfigButton, ConfigPanel } from '../components/Config'
 import { EdgeWarnings } from '../components/EdgeWarnings'
+import { FirstPersonHands } from '../components/FirstPersonHands'
+import { QuipProjector, Quips } from '../components/Quips'
 import { Director } from '../game/Director'
 import { Enemies } from '../game/Enemy'
 import { Explosions } from '../game/Explosions'
@@ -98,9 +100,14 @@ export function Game() {
     >
       <PixelCanvas>
         <CameraRig />
-        <Floor speed={2.2} />
+        <QuipProjector />
+        <Suspense fallback={null}>
+          <Floor speed={2.2} />
+        </Suspense>
         <World />
       </PixelCanvas>
+      <Quips />
+      <FirstPersonHands />
       <Hud />
       <EdgeWarnings />
       <Director />

@@ -138,7 +138,7 @@ export function Home() {
         <p>UKITU TIRO EGITEKO</p>
         <p>GORA LERRATU: JAUZIA</p>
         <p>BEHERA LERRATU: ATERKIA</p>
-        <p className="dim">3 KOLPE = BIZITZA 1</p>
+        <p className="dim">3 KOLPE = TXANDA 1</p>
         <p className="dim">PUAK: GORRIA ZULATU</p>
         <p className="dim">URDINA x2 · HORIA AZKAR</p>
       </div>
