@@ -1,6 +1,6 @@
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody, useBeforePhysicsStep, type RapierRigidBody } from '@react-three/rapier'
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import type * as THREE from 'three'
 import { readTilt } from '../input'
 import { CAMERA_Z } from '../scene/PixelCanvas'
@@ -20,6 +20,8 @@ export function Player() {
   const lives = useGame((s) => s.lives)
   const hitPlayer = useGame((s) => s.hitPlayer)
 
+  // Initial position only: stable reference so re-renders (hits, banana) never re-apply it.
+  const spawn = useMemo(() => [0, field.playerY, 0] as [number, number, number], [])
   const rows = SAUCER_STAGES[stage]
   const { halfW, halfH } = latheSize(rows, SAUCER_VOXEL)
   const { mass } = STAGES[stage]
@@ -77,7 +79,7 @@ export function Player() {
     <RigidBody
       ref={body}
       type="dynamic"
-      position={[0, field.playerY, 0]}
+      position={spawn}
       gravityScale={0}
       enabledTranslations={[true, false, false]}
       lockRotations

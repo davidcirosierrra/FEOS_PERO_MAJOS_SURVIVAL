@@ -1,6 +1,6 @@
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
-import { useEffect, useMemo, useRef } from 'react'
+import { memo, useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { BANANA } from '../voxel/patterns'
 import { Voxel } from '../voxel/Voxel'
@@ -8,6 +8,7 @@ import { BANANA_EVERY_MS, BANANA_SPEED, GROUPS } from './config'
 import { field, useGame, type Shot } from './store'
 
 const SIZE = 0.12
+const BANANA_VEL: [number, number, number] = [0, -BANANA_SPEED, 0]
 
 /** Soft round glow texture, generated once. */
 let glowTex: THREE.Texture | null = null
@@ -26,7 +27,7 @@ function glowTexture() {
   return glowTex
 }
 
-function Banana({ b }: { b: Shot }) {
+const Banana = memo(function Banana({ b }: { b: Shot }) {
   const body = useRef<RapierRigidBody>(null)
   const fruit = useRef<THREE.Group>(null)
   const ring = useRef<THREE.Mesh>(null)
@@ -59,7 +60,7 @@ function Banana({ b }: { b: Shot }) {
       type="dynamic"
       position={[b.x, b.y, 0]}
       gravityScale={0}
-      linearVelocity={[0, -BANANA_SPEED, 0]}
+      linearVelocity={BANANA_VEL}
       lockRotations
       colliders={false}
       userData={{ kind: 'banana', id: b.id }}
@@ -80,7 +81,7 @@ function Banana({ b }: { b: Shot }) {
       </mesh>
     </RigidBody>
   )
-}
+})
 
 export function Bananas() {
   const bananas = useGame((s) => s.bananas)

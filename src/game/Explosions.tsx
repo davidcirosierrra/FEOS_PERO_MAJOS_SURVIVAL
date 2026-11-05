@@ -1,12 +1,12 @@
 import { CuboidCollider, RigidBody } from '@react-three/rapier'
-import { useEffect, useMemo } from 'react'
+import { memo, useEffect, useMemo } from 'react'
 import { GROUPS } from './config'
 import { useGame, type Explosion as ExplosionT } from './store'
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a)
 
 /** Voxel debris thrown around by the physics engine. */
-function Explosion({ ex }: { ex: ExplosionT }) {
+const Explosion = memo(function Explosion({ ex }: { ex: ExplosionT }) {
   const remove = useGame((s) => s.removeExplosion)
   const pieces = useMemo(
     () =>
@@ -23,6 +23,8 @@ function Explosion({ ex }: { ex: ExplosionT }) {
     [ex],
   )
 
+  const origin = useMemo(() => [ex.x, ex.y, 0] as [number, number, number], [ex])
+
   useEffect(() => {
     const t = setTimeout(() => remove(ex.id), 1500)
     return () => clearTimeout(t)
@@ -31,7 +33,7 @@ function Explosion({ ex }: { ex: ExplosionT }) {
   return pieces.map((p, i) => (
     <RigidBody
       key={i}
-      position={[ex.x, ex.y, 0]}
+      position={origin}
       linearVelocity={p.v}
       angularVelocity={p.w}
       gravityScale={1.4}
@@ -44,7 +46,7 @@ function Explosion({ ex }: { ex: ExplosionT }) {
       </mesh>
     </RigidBody>
   ))
-}
+})
 
 export function Explosions() {
   const explosions = useGame((s) => s.explosions)

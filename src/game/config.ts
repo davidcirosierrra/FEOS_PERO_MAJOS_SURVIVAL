@@ -35,6 +35,7 @@ export const wave = (n: number) => ({
 
 export const SCORE_PER_KILL = 100
 export const SCORE_PER_DEFLECT = 25
+export const SCORE_PER_FOOD = 10
 
 /** Umbrella (swipe up): open time and cooldown measured from opening. */
 export const UMBRELLA_MS = 1400
@@ -57,13 +58,13 @@ export const SCORE_BANANA_FULL = 250
 const G = { player: 0, playerShot: 1, enemy: 2, enemyShot: 3, wall: 4, debris: 5, foodSolid: 6, umbrella: 7, powerup: 8 }
 export const GROUPS = {
   player: interactionGroups(G.player, [G.enemyShot, G.wall, G.powerup]),
-  playerShot: interactionGroups(G.playerShot, [G.enemy]),
+  playerShot: interactionGroups(G.playerShot, [G.enemy, G.foodSolid]),
   enemy: interactionGroups(G.enemy, [G.playerShot]),
   enemyShot: interactionGroups(G.enemyShot, [G.player]),
   wall: interactionGroups(G.wall, [G.player, G.debris]),
   debris: interactionGroups(G.debris, [G.wall]),
-  /** Solid part of thrown food: only bounces off the umbrella. */
-  foodSolid: interactionGroups(G.foodSolid, [G.umbrella]),
+  /** Solid part of thrown food: bounces off the umbrella, can be shot down. */
+  foodSolid: interactionGroups(G.foodSolid, [G.umbrella, G.playerShot]),
   umbrella: interactionGroups(G.umbrella, [G.foodSolid]),
   powerup: interactionGroups(G.powerup, [G.player]),
 }

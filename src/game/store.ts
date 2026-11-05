@@ -8,6 +8,7 @@ import {
   RESPAWN_INVULN_MS,
   SCORE_BANANA_FULL,
   SCORE_PER_DEFLECT,
+  SCORE_PER_FOOD,
   SCORE_PER_KILL,
   STAGES,
   JUMP_CHARGE_MS,
@@ -63,6 +64,7 @@ type State = {
   openUmbrella: () => void
   jump: () => void
   deflect: (shotId: number) => void
+  shootFood: (foodId: number, shotId: number) => boolean
   removePlayerShot: (id: number) => void
   enemyFire: (x: number, y: number) => void
   removeEnemyShot: (id: number) => void
@@ -183,6 +185,18 @@ export const useGame = create<State>((set, get) => ({
     if (s.gameOver || s.screen !== 'game' || now < s.jumpReadyAt) return
     vibrate(30)
     set({ jumpStart: now, jumpReadyAt: now + JUMP_CHARGE_MS })
+  },
+
+  /** Player laser hits food: the laser is used up, the food stays (it falls away in the scene). */
+  shootFood: (foodId, shotId) => {
+    const s = get()
+    if (s.gameOver || !s.enemyShots.some((e) => e.id === foodId) || !s.playerShots.some((p) => p.id === shotId)) return false
+    vibrate(10)
+    set({
+      playerShots: s.playerShots.filter((p) => p.id !== shotId),
+      score: s.score + SCORE_PER_FOOD * Math.max(1, s.wave),
+    })
+    return true
   },
 
   deflect: (sid) => {
