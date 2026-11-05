@@ -1,3 +1,4 @@
+import './three-console'
 import '@fontsource/press-start-2p'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
