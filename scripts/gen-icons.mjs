@@ -1,10 +1,21 @@
-// Generates PWA icons (PNG) from the player saucer pixel pattern. No dependencies.
+// Generates PWA icons (PNG): pink fork on a purple disc. No dependencies.
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { deflateSync } from 'node:zlib'
 
-const rows = ['....ddd....', '...dwddd...', '.hhhhhhhhh.', 'mymmymmymmy', '.nnnnnnnnn.', '...kkkkk...']
-const pal = { d: 'cfd8de', w: 'ffffff', h: 'a9b0b7', m: '7f868d', n: '5c6268', y: 'ffffff', k: '3a3e43' }
-const BG = '05010f'
+const rows = [
+  '.p.p.p.',
+  '.p.p.p.',
+  '.p.p.p.',
+  '.ppppp.',
+  '..ppp..',
+  '...p...',
+  '...p...',
+  '...p...',
+  '...p...',
+]
+const pal = { p: 'ff7eb6' }
+const DISC = '9b4f9e'
+const BG = '1a1020'
 
 const crcTable = Array.from({ length: 256 }, (_, n) => {
   let c = n
@@ -39,7 +50,8 @@ function png(size, fill) {
       const cx = Math.floor((x - ox) / px)
       const cy = Math.floor((y - oy) / px)
       const ch = x >= ox && y >= oy && cy < h && cx < w ? rows[cy][cx] : '.'
-      const [r, g, b] = hex(pal[ch] ?? BG)
+      const inDisc = Math.hypot(x - size / 2, y - size / 2) < size * 0.46
+      const [r, g, b] = hex(pal[ch] ?? (inDisc ? DISC : BG))
       const i = y * (size * 3 + 1) + 1 + x * 3
       raw[i] = r
       raw[i + 1] = g
@@ -60,9 +72,9 @@ function png(size, fill) {
 }
 
 mkdirSync('public/icons', { recursive: true })
-writeFileSync('public/icons/icon-192.png', png(192, 0.8))
-writeFileSync('public/icons/icon-512.png', png(512, 0.8))
-writeFileSync('public/icons/maskable-512.png', png(512, 0.6))
-writeFileSync('public/icons/apple-touch-icon.png', png(180, 0.8))
-writeFileSync('public/favicon.png', png(64, 0.9))
+writeFileSync('public/icons/icon-192.png', png(192, 0.55))
+writeFileSync('public/icons/icon-512.png', png(512, 0.55))
+writeFileSync('public/icons/maskable-512.png', png(512, 0.42))
+writeFileSync('public/icons/apple-touch-icon.png', png(180, 0.55))
+writeFileSync('public/favicon.png', png(64, 0.6))
 console.log('icons generated')

@@ -4,7 +4,8 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import type * as THREE from 'three'
 import { sfx } from '../audio'
 import { patternSize } from '../voxel/patterns'
-import { COOKIE, TRUCK_GRID, TRUCK_PARTS } from '../voxel/truck'
+import { BAR_GRID as TRUCK_GRID, BAR_PARTS as TRUCK_PARTS } from '../voxel/bar'
+import { PIZZA as COOKIE } from '../voxel/theme'
 import { Voxel } from '../voxel/Voxel'
 import { boss as bossCfg, COOKIE_PUSH, GROUPS, TRUCK_VOXEL as S } from './config'
 import { field, useGame, type Cookie } from './store'
@@ -124,7 +125,7 @@ function Truck() {
         )}
         <group ref={visual}>
           {PARTS.map((p, i) =>
-            i < lost ? null : <Voxel key={p.name} pattern={p.pattern} size={S} depth={p.front ? 1 : 4} position={[p.cx, p.cy, p.front ? 0.3 : 0]} />,
+            i < lost ? null : <Voxel key={p.name} pattern={p.pattern} size={S} depth={p.front ? 2 : 4} position={[p.cx, p.cy, p.front ? 0.3 : 0]} />,
           )}
         </group>
       </RigidBody>
@@ -153,7 +154,7 @@ const PartDebris = memo(function PartDebris({ d, onDone }: { d: Debris; onDone: 
   return (
     <RigidBody position={init.pos} linearVelocity={init.vel} angularVelocity={init.ang} gravityScale={1.6} colliders={false}>
       <CuboidCollider args={[(p.w * S) / 2, (p.h * S) / 2, 0.2]} mass={0.5} collisionGroups={GROUPS.debris} />
-      <Voxel pattern={p.pattern} size={S} depth={p.front ? 1 : 4} />
+      <Voxel pattern={p.pattern} size={S} depth={p.front ? 2 : 4} />
     </RigidBody>
   )
 })

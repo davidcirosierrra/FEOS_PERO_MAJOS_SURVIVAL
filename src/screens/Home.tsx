@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { sfx, unlockAudio } from '../audio'
 import { ConfigPanel } from '../components/Config'
+import { PixelSprite } from '../components/PixelSprite'
+import { useSettings } from '../settings'
+import { CHARACTERS, type CharacterId } from '../voxel/theme'
 import { useGame } from '../game/store'
 import { calibrate, input, readTilt, sensorAlive, startInput } from '../input'
 import { pad } from '../storage'
 
-const TITLE = 'PARANOID'
+const TITLE_LINES = ['FEOS PERO', 'MAJOS']
 
 // Warm up the game chunk (Rapier) while the player looks at the home screen.
 const preload = () => void import('./Game')
@@ -29,7 +32,7 @@ function TiltMeter() {
       const alive = sensorAlive()
       const t = alive ? Math.max(-1, Math.min(1, input.raw)) : readTilt()
       if (dot.current) dot.current.style.left = `${50 + t * 46}%`
-      if (label.current) label.current.textContent = alive ? 'SENSOR OK' : 'NO SENSOR · TAP'
+      if (label.current) label.current.textContent = alive ? 'SENTSOREA ONDO' : 'SENTSORERIK EZ · UKITU'
       label.current?.classList.toggle('warn', !alive)
       raf = requestAnimationFrame(tick)
     }
@@ -42,6 +45,30 @@ function TiltMeter() {
         <i ref={dot} />
       </div>
       <span ref={label} />
+    </div>
+  )
+}
+
+/** Pick who walks to the stage: the bass player or the pink pig. */
+function CharacterSelect() {
+  const character = useSettings((s) => s.character)
+  const set = useSettings((s) => s.set)
+  return (
+    <div className="char-select intro" onPointerDown={(e) => e.stopPropagation()}>
+      {(Object.keys(CHARACTERS) as CharacterId[]).map((id) => (
+        <button
+          key={id}
+          className={`char-card ${character === id ? 'on' : ''}`}
+          onClick={() => {
+            unlockAudio()
+            sfx.click()
+            set({ character: id })
+          }}
+        >
+          <PixelSprite pattern={CHARACTERS[id].pattern} scale={4} />
+          <span>{CHARACTERS[id].name}</span>
+        </button>
+      ))}
     </div>
   )
 }
@@ -70,21 +97,29 @@ export function Home() {
         void startInput(true)
       }}
     >
-      <h1 className="title" aria-label={TITLE}>
-        {[...TITLE].map((ch, i) => (
-          <span key={i} style={{ animationDelay: `${0.2 + i * 0.1}s` }}>
-            {ch}
-          </span>
-        ))}
-      </h1>
+      <div className="title-block">
+        <h1 className="title" aria-label="Feos pero majos">
+          {TITLE_LINES.map((line, l) => (
+            <span key={l} className="title-line">
+              {[...line].map((ch, i) => (
+                <span key={i} style={{ animationDelay: `${0.2 + (l * 9 + i) * 0.07}s` }}>
+                  {ch === ' ' ? '\u00a0' : ch}
+                </span>
+              ))}
+            </span>
+          ))}
+        </h1>
+        <p className="subtitle intro">SURVIVAL</p>
+        <p className="hi intro">
+          ERREKORRA <b>{pad(hi)}</b>
+        </p>
+      </div>
 
-      <p className="hi intro">
-        HI-SCORE <b>{pad(hi)}</b>
-      </p>
+      <CharacterSelect />
 
       <div className="home-buttons intro-drop">
         <button className="pixel-btn play-btn" onClick={play}>
-          PLAY
+          JOLASTU
         </button>
         <button
           className="pixel-btn alt small"
@@ -93,17 +128,19 @@ export function Home() {
             setConfig(true)
           }}
         >
-          CONFIG
+          EZARPENAK
         </button>
       </div>
 
       <div className="menu-info intro">
         <TiltMeter />
-        <p>TILT TO MOVE · TAP TO FIRE</p>
-        <p>SWIPE UP: LOOP</p>
-        <p>SWIPE DOWN: UMBRELLA</p>
-        <p className="dim">3 HITS = 1 LIFE</p>
-        <p className="dim">RED PIERCE · BLUE x2 · YELLOW FAST</p>
+        <p>MAKURTU MUGITZEKO</p>
+        <p>UKITU TIRO EGITEKO</p>
+        <p>GORA LERRATU: JAUZIA</p>
+        <p>BEHERA LERRATU: ATERKIA</p>
+        <p className="dim">3 KOLPE = BIZITZA 1</p>
+        <p className="dim">PUAK: GORRIA ZULATU</p>
+        <p className="dim">URDINA x2 · HORIA AZKAR</p>
       </div>
       {config && <ConfigPanel onClose={() => setConfig(false)} />}
     </div>

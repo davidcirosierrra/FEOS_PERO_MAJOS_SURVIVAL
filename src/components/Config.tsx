@@ -5,7 +5,7 @@ import type { Pattern } from '../voxel/patterns'
 import { PixelSprite } from './PixelSprite'
 
 const GEAR: Pattern = {
-  palette: { g: '#c9ccd2', k: '#05010f' },
+  palette: { g: '#c9ccd2', k: '#1a1020' },
   rows: ['..g.g..', '.ggggg.', 'gggkggg', 'ggkkkgg', 'gggkggg', '.ggggg.', '..g.g..'],
 }
 
@@ -40,7 +40,7 @@ function Toggle({ k, label }: { k: 'music' | 'sfx' | 'vibration'; label: string 
           sfx.click()
         }}
       >
-        {on ? 'ON' : 'OFF'}
+        {on ? 'BAI' : 'EZ'}
       </button>
     </div>
   )
@@ -72,7 +72,7 @@ function Volume({ k, enabled }: { k: 'musicVol' | 'sfxVol'; enabled: 'music' | '
 }
 
 /** Audio / vibration settings. In game it doubles as the pause menu. */
-export function ConfigPanel({ onClose, title = 'CONFIG' }: { onClose: () => void; title?: string }) {
+export function ConfigPanel({ onClose, title = 'EZARPENAK' }: { onClose: () => void; title?: string }) {
   const inGame = useGame((s) => s.screen === 'game')
   const setScreen = useGame((s) => s.setScreen)
   return (
@@ -85,11 +85,11 @@ export function ConfigPanel({ onClose, title = 'CONFIG' }: { onClose: () => void
     >
       <h2 className="cfg-title">{title}</h2>
       <div className="cfg-list">
-        <Toggle k="music" label="MUSIC" />
+        <Toggle k="music" label="MUSIKA" />
         <Volume k="musicVol" enabled="music" />
-        <Toggle k="sfx" label="SOUND FX" />
+        <Toggle k="sfx" label="SOINUAK" />
         <Volume k="sfxVol" enabled="sfx" />
-        <Toggle k="vibration" label="VIBRATION" />
+        <Toggle k="vibration" label="BIBRAZIOA" />
       </div>
       <div className="buttons">
         <button
@@ -99,7 +99,7 @@ export function ConfigPanel({ onClose, title = 'CONFIG' }: { onClose: () => void
             onClose()
           }}
         >
-          {inGame ? 'RESUME' : 'BACK'}
+          {inGame ? 'JARRAITU' : 'ATZERA'}
         </button>
         {inGame && (
           <button
@@ -109,7 +109,7 @@ export function ConfigPanel({ onClose, title = 'CONFIG' }: { onClose: () => void
               setScreen('home')
             }}
           >
-            QUIT
+            IRTEN
           </button>
         )}
       </div>

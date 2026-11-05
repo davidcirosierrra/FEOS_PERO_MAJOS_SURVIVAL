@@ -3,9 +3,11 @@ const bits = (g: number[]) => g.reduce((acc, i) => acc | (1 << i), 0)
 const interactionGroups = (member: number, filter: number[]) => ((bits([member]) << 16) | bits(filter)) >>> 0
 
 export const VOXEL = 0.15
-export const SAUCER_VOXEL = 0.13
-export const SHUTTLE_VOXEL = 0.11
-export const FOOD_VOXEL = 0.11
+/** Player character voxel size and how much wider it gets per hit (it eats what it's hit with). */
+export const CHAR_VOXEL = 0.085
+export const STAGE_WIDTH = [1, 1.25, 1.5]
+export const FAN_VOXEL = 0.095
+export const FOOD_VOXEL = 0.1
 
 export const LIVES = 3
 /** Hits per life. Stage 0..2 are the ship getting fatter; the 3rd hit costs a life. */

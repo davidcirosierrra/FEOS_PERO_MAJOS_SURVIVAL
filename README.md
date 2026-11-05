@@ -1,17 +1,22 @@
-# Paranoid
+# Feos pero majos survival
 
-8-bit 3D shooter PWA (React + TypeScript + three.js / react-three-fiber + Rapier physics).
+Fork of *Paranoid*: 8-bit 3D shooter PWA (React + TypeScript + react-three-fiber + Rapier), re-themed for
+**Feos pero majos**: the band walks to the stage over Bilbao tiles while fans throw lighters, CDs and
+wine glasses. Play as the bass player or the pink pig, shooting pink forks with the fork-rifle.
 
-- Tilt the phone to move the alien saucer, tap to fire, swipe up for a loop jump (dodges everything, 10 s charge), swipe down for an umbrella that bounces the food away. A glowing banana falls every 15–22 s: catch it to repair one hull point. Shot medals fall faster than food: red = piercing laser (knocks food down and deflects upwards), blue = double laser, yellow = double fire rate; they stack, and every 2 hits you lose the latest one. Every 10 levels: ice-cream truck boss with a health bar; it sheds parts (smaller target) as it takes damage, throws cones and indestructible cookies that lasers can only push away.
-- Shuttles drop junk food on you; every hit makes the saucer fatter (heavier → slower, fires slower). 3 hits = 1 life, 3 lives.
-- Hi-score in `localStorage`. No backend.
+- Tilt to move, tap to fire, swipe up to jump (somersault, dodges everything, 10 s charge), swipe down
+  for an umbrella that bounces stuff away.
+- Every hit makes you fatter (wider, heavier, slower to fire); 3 hits = 1 life, 3 lives.
+- Kalimotxo slims you down one step; guitar picks are shot power-ups (red pierce, blue double, yellow
+  rapid), every 2 hits you lose the latest one.
+- Every 10 levels: the **FELIPE** bar boss, which falls apart as you hit it and throws burgers and
+  indestructible pizzas that forks can only push.
+- UI in Basque. Chiptune sound synthesised with Web Audio; settings saved in `localStorage`.
 
 ```bash
 npm i
-npm run dev      # desktop: ← → / A D move, click / Space fire, ↑ / W loop jump, ↓ / S umbrella
+npm run dev      # desktop: ← → / A D move, click / Space fire, ↑ / W jump, ↓ / S umbrella
 npm run build
 ```
-
-Sound: all chiptune, synthesised with Web Audio (`src/audio.ts`, no audio files): SFX + menu / game / boss soundtracks. CONFIG menu (home, and gear button in game = pause) for music/SFX on-off + volume and vibration, saved in `localStorage`.
 
 Icons: `node scripts/gen-icons.mjs`.

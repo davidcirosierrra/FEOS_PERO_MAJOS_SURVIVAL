@@ -2,12 +2,13 @@ import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
 import { useRef } from 'react'
 import type * as THREE from 'three'
-import { patternSize, SHUTTLE } from '../voxel/patterns'
-import { Shuttle } from '../voxel/Voxel'
-import { GROUPS, SHUTTLE_VOXEL, wave as waveCfg } from './config'
+import { patternSize } from '../voxel/patterns'
+import { FANS } from '../voxel/theme'
+import { Voxel } from '../voxel/Voxel'
+import { FAN_VOXEL, GROUPS, wave as waveCfg } from './config'
 import { field, useGame, type Enemy as EnemyT } from './store'
 
-const { w, h } = patternSize(SHUTTLE)
+const { w, h } = patternSize(FANS[0])
 const expRand = (mean: number) => -Math.log(1 - Math.random()) * mean
 
 export function Enemy({ e }: { e: EnemyT }) {
@@ -35,13 +36,16 @@ export function Enemy({ e }: { e: EnemyT }) {
       y.current = field.halfH + 2
     }
     y.current += (slotY.current - y.current) * Math.min(1, dt * 2.2)
-    const halfSpan = field.halfW - (w * SHUTTLE_VOXEL) / 2
+    const halfSpan = field.halfW - (w * FAN_VOXEL) / 2
     const x = Math.max(-halfSpan, Math.min(halfSpan, e.slotX + Math.sin(t.current * 1.25 + e.phase) * cfg.sway))
     b.setNextKinematicTranslation({ x, y: y.current, z: 0 })
 
     if (visual.current) {
-      visual.current.rotation.y = Math.sin(t.current * 2 + e.phase) * 0.5
-      visual.current.rotation.z = Math.cos(t.current * 1.25 + e.phase) * 0.12
+      // Walking wobble.
+      const step = Math.sin(t.current * 8 + e.phase)
+      visual.current.rotation.z = step * 0.08
+      visual.current.rotation.y = Math.sin(t.current * 1.25 + e.phase) * 0.25
+      visual.current.position.y = Math.abs(step) * 0.08
     }
 
     // Shoot only once in position.
@@ -66,9 +70,9 @@ export function Enemy({ e }: { e: EnemyT }) {
         killEnemy(e.id, ud.id, p.x, p.y)
       }}
     >
-      <CuboidCollider args={[(w * SHUTTLE_VOXEL) / 2.2, (h * SHUTTLE_VOXEL) / 2.2, 0.3]} collisionGroups={GROUPS.enemy} />
+      <CuboidCollider args={[(w * FAN_VOXEL) / 2.2, (h * FAN_VOXEL) / 2.2, 0.3]} collisionGroups={GROUPS.enemy} />
       <group ref={visual}>
-        <Shuttle size={SHUTTLE_VOXEL} />
+        <Voxel pattern={FANS[e.look]} size={FAN_VOXEL} depth={3} />
       </group>
     </RigidBody>
   )

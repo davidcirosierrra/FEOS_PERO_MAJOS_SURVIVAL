@@ -3,10 +3,11 @@ import { CuboidCollider, RigidBody, useBeforePhysicsStep, type RapierRigidBody }
 import { useEffect, useMemo, useRef } from 'react'
 import type * as THREE from 'three'
 import { readTilt } from '../input'
-import { CAMERA_Z } from '../scene/PixelCanvas'
-import { SAUCER_STAGES } from '../voxel/patterns'
-import { latheSize, Saucer } from '../voxel/Voxel'
-import { BASE_DAMPING, GROUPS, SAUCER_VOXEL, STAGES, THRUST } from './config'
+import { useSettings } from '../settings'
+import { patternSize } from '../voxel/patterns'
+import { CHARACTERS } from '../voxel/theme'
+import { Voxel } from '../voxel/Voxel'
+import { BASE_DAMPING, CHAR_VOXEL, GROUPS, STAGE_WIDTH, STAGES, THRUST } from './config'
 import { jumpPose } from './jump'
 import { field, playerState, useGame } from './store'
 
@@ -16,15 +17,19 @@ const X_ONLY: [boolean, boolean, boolean] = [true, false, false]
 export function Player() {
   const body = useRef<RapierRigidBody>(null)
   const visual = useRef<THREE.Group>(null)
-  const spin = useRef<THREE.Mesh>(null)
+  const fat = useRef<THREE.Group>(null)
+  const character = useSettings((s) => s.character)
   const stage = useGame((s) => s.stage)
   const lives = useGame((s) => s.lives)
   const hitPlayer = useGame((s) => s.hitPlayer)
 
   // Initial position only: stable reference so re-renders (hits, banana) never re-apply it.
   const spawn = useMemo(() => [0, field.playerY, 0] as [number, number, number], [])
-  const rows = SAUCER_STAGES[stage]
-  const { halfW, halfH } = latheSize(rows, SAUCER_VOXEL)
+  const pattern = CHARACTERS[character].pattern
+  const { w, h } = patternSize(pattern)
+  // Every hit makes the character fatter (wider and heavier).
+  const halfW = (w * CHAR_VOXEL * STAGE_WIDTH[stage]) / 2
+  const halfH = (h * CHAR_VOXEL) / 2
   const { mass } = STAGES[stage]
 
   // Heavier ship: less damping → more inertia; with constant thrust its top speed drops too.
@@ -58,20 +63,23 @@ export function Player() {
 
     const vx = b.linvel().x
     const t = state.clock.elapsedTime
-    // The camera looks down on the ship (~19°): tip it back so we see the side profile and dome.
     const { invulnUntil, gameOver, jumpStart } = useGame.getState()
     const now = performance.now()
-    const tilt = -Math.atan2(-field.playerY, CAMERA_Z) + 0.1
     const pose = jumpPose(now, jumpStart, p.x)
+    // Walking: little bounce and sway; leans into the direction it's moving.
+    const step = Math.sin(t * 9)
     if (pose) {
       v.position.set(pose.x, pose.y, pose.z)
-      v.rotation.x = tilt + pose.flip
+      v.rotation.x = pose.flip
     } else {
-      v.position.set(0, Math.sin(t * 3) * 0.06, 0)
-      v.rotation.x = tilt
+      v.position.set(0, Math.abs(step) * 0.07, 0)
+      v.rotation.x = 0
     }
-    v.rotation.z = -vx * 0.035
-    spin.current?.rotateY(0.04 + Math.abs(vx) * 0.01)
+    v.rotation.z = -vx * 0.03 + step * 0.04
+    v.rotation.y = vx * 0.04
+    // Ease into the new width after a hit / kalimotxo.
+    const f = fat.current
+    if (f) f.scale.x += (STAGE_WIDTH[stage] - f.scale.x) * 0.2
 
     v.visible = gameOver ? false : now > invulnUntil || Math.floor(now / 90) % 2 === 0
   })
@@ -101,13 +109,15 @@ export function Player() {
         collisionGroups={GROUPS.player}
       />
       <group ref={visual}>
-        <Saucer ref={spin} rows={rows} size={SAUCER_VOXEL} />
+        <group ref={fat}>
+          <Voxel pattern={pattern} size={CHAR_VOXEL} depth={3} />
+        </group>
       </group>
     </RigidBody>
   )
 }
 
-/** Invisible side walls the ship bounces against. */
+/** Invisible side walls the character bounces against. */
 export function Walls() {
   const x = field.halfW + 0.5
   return (

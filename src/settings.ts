@@ -1,3 +1,4 @@
+import type { CharacterId } from './voxel/theme'
 import { create } from 'zustand'
 
 export type Settings = {
@@ -8,10 +9,11 @@ export type Settings = {
   /** 0..10 */
   sfxVol: number
   vibration: boolean
+  character: CharacterId
 }
 
 const KEY = 'paranoid.settings'
-const DEFAULTS: Settings = { music: true, sfx: true, musicVol: 6, sfxVol: 8, vibration: true }
+const DEFAULTS: Settings = { music: true, sfx: true, musicVol: 6, sfxVol: 8, vibration: true, character: 'bassist' }
 
 function load(): Settings {
   try {

@@ -17,7 +17,7 @@ export default function App() {
   return (
     <main className="app">
       {screen === 'game' ? (
-        <Suspense fallback={<div className="screen loading blink">LOADING</div>}>
+        <Suspense fallback={<div className="screen loading blink">KARGATZEN</div>}>
           <Game />
         </Suspense>
       ) : (

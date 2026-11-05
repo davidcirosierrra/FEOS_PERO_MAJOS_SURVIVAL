@@ -12,9 +12,9 @@ export const UMBRELLA_VOXEL = 0.1
 const { h } = patternSize(UMBRELLA)
 const HEIGHT = h * UMBRELLA_VOXEL
 /** Centre of the umbrella sprite above the saucer. */
-const OFFSET_Y = 0.55 + HEIGHT / 2
+const OFFSET_Y = 1.05 + HEIGHT / 2
 /** Big ball under the canopy: food bounces off at an angle depending on where it hits. */
-const RADIUS = 1.05
+const RADIUS = 1.1
 const BALL_Y = OFFSET_Y + HEIGHT / 2 - RADIUS
 
 /** Follows the saucer while open (swipe up). */

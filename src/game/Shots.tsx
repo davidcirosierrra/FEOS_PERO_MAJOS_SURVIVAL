@@ -2,7 +2,8 @@ import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
 import { memo, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { FOOD, grayPattern, LASER, patternSize, type Pattern } from '../voxel/patterns'
+import { grayPattern, patternSize, type Pattern } from '../voxel/patterns'
+import { FORK, THROWN } from '../voxel/theme'
 import { Voxel } from '../voxel/Voxel'
 import { FOOD_VOXEL, GROUPS, PLAYER_SHOT_SPEED, RED_DEFLECT_DEG } from './config'
 import { field, useGame, type FoodShot, type Shot } from './store'
@@ -32,7 +33,7 @@ const PlayerShot = memo(function PlayerShot({ s }: { s: Shot }) {
       userData={{ kind: 'playerShot', id: s.id }}
     >
       <CuboidCollider args={[0.1, 0.25, 0.3]} sensor mass={0.05} collisionGroups={GROUPS.playerShot} />
-      <Voxel pattern={LASER} size={0.13} depth={1} basic />
+      <Voxel pattern={FORK} size={0.075} depth={1} basic />
     </RigidBody>
   )
 })
@@ -54,7 +55,7 @@ const Z_AXIS = new THREE.Vector3(0, 0, 1)
 const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
   const body = useRef<RapierRigidBody>(null)
   const remove = useGame((st) => st.removeEnemyShot)
-  const pattern = FOOD[s.kind]
+  const pattern = THROWN[s.kind]
   const { w, h } = patternSize(pattern)
   const { vel, angVel } = useMemo(() => {
     const spin = (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 3)

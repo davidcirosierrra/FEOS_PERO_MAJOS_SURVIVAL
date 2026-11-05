@@ -2,7 +2,8 @@ import { create } from 'zustand'
 import { sfx } from '../audio'
 import { useSettings } from '../settings'
 import { loadHighScore, saveHighScore } from '../storage'
-import { FOOD_KINDS, MEDAL_KINDS, type MedalKind } from '../voxel/patterns'
+import { MEDAL_KINDS, type MedalKind } from '../voxel/patterns'
+import { FAN_THROWS, FANS } from '../voxel/theme'
 import {
   HITS_PER_LIFE,
   INVULN_MS,
@@ -31,7 +32,8 @@ import {
 
 export type Screen = 'home' | 'game'
 
-export type Enemy = { id: number; slotX: number; slotY: number; phase: number; delay: number }
+/** `look` indexes FANS. */
+export type Enemy = { id: number; slotX: number; slotY: number; phase: number; delay: number; look: number }
 export type Shot = { id: number; x: number; y: number }
 export type FoodShot = Shot & { kind: string; speed: number }
 export type Boss = { id: number; hp: number; maxHp: number; level: number }
@@ -200,6 +202,7 @@ export const useGame = create<State>((set, get) => ({
         slotY: top - row * 2.5 + (rows > 2 ? 0.6 : 0),
         phase: Math.random() * Math.PI * 2,
         delay: i * 0.12,
+        look: Math.floor(Math.random() * FANS.length),
       })
     }
     if (n > 1) sfx.levelUp()
@@ -274,8 +277,8 @@ export const useGame = create<State>((set, get) => ({
     const s = get()
     const cfg = waveCfg(s.wave)
     if (s.gameOver || s.enemyShots.length >= cfg.maxEnemyShots) return
-    const kind = FOOD_KINDS[Math.floor(Math.random() * FOOD_KINDS.length)]
-    set({ enemyShots: [...s.enemyShots, { id: id(), x, y: y - 1.3, kind, speed: cfg.shotSpeed }] })
+    const kind = FAN_THROWS[Math.floor(Math.random() * FAN_THROWS.length)]
+    set({ enemyShots: [...s.enemyShots, { id: id(), x, y: y - 0.9, kind, speed: cfg.shotSpeed }] })
   },
 
   removeEnemyShot: (sid) => set((s) => ({ enemyShots: s.enemyShots.filter((p) => p.id !== sid) })),
@@ -297,7 +300,7 @@ export const useGame = create<State>((set, get) => ({
       if (medalHits >= HITS_PER_MEDAL_LOSS) {
         const lost = s.medals[s.medals.length - 1]
         sfx.medalLost()
-        set({ medals: s.medals.slice(0, -1), medalHits: 0, banner: `${lost.toUpperCase()} LOST` })
+        set({ medals: s.medals.slice(0, -1), medalHits: 0, banner: `PUA ${PICK_NAME[lost]} GALDUTA` })
       } else set({ medalHits })
     }
 
@@ -366,9 +369,9 @@ export const useGame = create<State>((set, get) => ({
       playerShots,
       boss: null,
       cookies: [],
-      enemyShots: s.enemyShots.filter((e) => e.kind !== 'cone'),
+      enemyShots: s.enemyShots.filter((e) => e.kind !== 'burger'),
       score: s.score + SCORE_PER_BOSS_HIT * s.wave + bonus,
-      banner: `BOSS +${bonus}`,
+      banner: `BURUZAGIA +${bonus}`,
       explosions: [...s.explosions, ...blast],
     })
   },
@@ -376,7 +379,7 @@ export const useGame = create<State>((set, get) => ({
   bossFire: (x, y) => {
     const s = get()
     if (s.gameOver || !s.boss) return
-    set({ enemyShots: [...s.enemyShots, { id: id(), x, y, kind: 'cone', speed: bossCfg(s.boss.level).coneSpeed }] })
+    set({ enemyShots: [...s.enemyShots, { id: id(), x, y, kind: 'burger', speed: bossCfg(s.boss.level).coneSpeed }] })
   },
 
   cookieFire: (x, y) => {
@@ -432,17 +435,19 @@ export const useGame = create<State>((set, get) => ({
     const explosions = [...s.explosions, { id: id(), x: playerState.x, y: field.playerY + 0.4, colors }]
     sfx.pickup(p.kind !== 'banana' && s.medals.includes(p.kind) ? 'dup' : p.kind)
     if (p.kind === 'banana') {
-      if (s.stage > 0) return set({ pickups, explosions, stage: s.stage - 1, banner: 'HULL +1' })
+      if (s.stage > 0) return set({ pickups, explosions, stage: s.stage - 1, banner: 'TRIPA -1' })
       return set({ pickups, explosions, score: s.score + SCORE_BANANA_FULL, banner: `+${SCORE_BANANA_FULL}` })
     }
     if (s.medals.includes(p.kind)) {
       return set({ pickups, explosions, score: s.score + SCORE_MEDAL_DUP, banner: `+${SCORE_MEDAL_DUP}` })
     }
-    set({ pickups, explosions, medals: [...s.medals, p.kind], banner: `${p.kind.toUpperCase()} MEDAL` })
+    set({ pickups, explosions, medals: [...s.medals, p.kind], banner: `PUA ${PICK_NAME[p.kind]}!` })
   },
 
   removeExplosion: (eid) => set((s) => ({ explosions: s.explosions.filter((e) => e.id !== eid) })),
 }))
+
+const PICK_NAME: Record<MedalKind, string> = { red: 'GORRIA', blue: 'URDINA', yellow: 'HORIA' }
 
 const MEDAL_SPARK: Record<MedalKind, string> = { red: '#ff3d5a', blue: '#3da5ff', yellow: '#ffe14d' }
 

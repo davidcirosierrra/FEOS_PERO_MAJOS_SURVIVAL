@@ -13,7 +13,7 @@ import { Shots } from '../game/Shots'
 import { UmbrellaSlot } from '../game/Umbrella'
 import { field, useGame } from '../game/store'
 import { CAMERA_Z, FOV, PixelCanvas } from '../scene/PixelCanvas'
-import { Starfield } from '../scene/Starfield'
+import { Floor } from '../scene/Floor'
 
 /** Derives the playfield size from the visible area at z = 0. */
 function useField() {
@@ -95,14 +95,14 @@ export function Game() {
       ref={(el) => el?.focus()}
     >
       <PixelCanvas>
-        <Starfield speed={3} />
+        <Floor speed={2.2} />
         <World />
       </PixelCanvas>
       <Hud />
       <Director />
       <PickupDropper />
       {!gameOver && <ConfigButton />}
-      {paused && <ConfigPanel onClose={() => setPaused(false)} title="PAUSED" />}
+      {paused && <ConfigPanel onClose={() => setPaused(false)} title="PAUSAN" />}
       {gameOver && <GameOver />}
     </div>
   )

@@ -2,16 +2,17 @@ import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
 import { memo, useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { BANANA, MEDAL_COLORS, MEDALS, type Pattern } from '../voxel/patterns'
+import { MEDAL_COLORS, type Pattern } from '../voxel/patterns'
+import { KALIMOTXO, PICKS } from '../voxel/theme'
 import { Voxel } from '../voxel/Voxel'
 import { BANANA_EVERY_MS, GROUPS, MEDAL_EVERY_MS } from './config'
 import { field, nextMedal, useGame, type Pickup as PickupT, type PickupKind } from './store'
 
 const LOOK: Record<PickupKind, { pattern: Pattern; size: number; glow: string; ring: string }> = {
-  banana: { pattern: BANANA, size: 0.12, glow: '255,225,77', ring: '#fff59d' },
-  red: { pattern: MEDALS.red, size: 0.12, glow: MEDAL_COLORS.red.glow, ring: '#ffd1d8' },
-  blue: { pattern: MEDALS.blue, size: 0.12, glow: MEDAL_COLORS.blue.glow, ring: '#cfe8ff' },
-  yellow: { pattern: MEDALS.yellow, size: 0.12, glow: MEDAL_COLORS.yellow.glow, ring: '#fff59d' },
+  banana: { pattern: KALIMOTXO, size: 0.11, glow: '255,90,120', ring: '#ffd1e6' },
+  red: { pattern: PICKS.red, size: 0.12, glow: MEDAL_COLORS.red.glow, ring: '#ffd1d8' },
+  blue: { pattern: PICKS.blue, size: 0.12, glow: MEDAL_COLORS.blue.glow, ring: '#cfe8ff' },
+  yellow: { pattern: PICKS.yellow, size: 0.12, glow: MEDAL_COLORS.yellow.glow, ring: '#fff59d' },
 }
 
 /** Soft round glow texture per colour, generated once. */
