@@ -1,4 +1,4 @@
-import type { CharacterId } from './voxel/theme'
+import { PLAYABLE, type CharacterId } from './voxel/theme'
 import { create } from 'zustand'
 
 export type Settings = {
@@ -15,11 +15,13 @@ export type Settings = {
 }
 
 const KEY = 'paranoid.settings'
-const DEFAULTS: Settings = { music: true, sfx: true, musicVol: 6, sfxVol: 8, vibration: true, character: 'bassist', camera: 'top' }
+const DEFAULTS: Settings = { music: true, sfx: true, musicVol: 6, sfxVol: 8, vibration: true, character: PLAYABLE[0], camera: 'top' }
 
 function load(): Settings {
   try {
-    return { ...DEFAULTS, ...(JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<Settings>) }
+    const s = { ...DEFAULTS, ...(JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<Settings>) }
+    if (!PLAYABLE.includes(s.character)) s.character = PLAYABLE[0]
+    return s
   } catch {
     return DEFAULTS
   }

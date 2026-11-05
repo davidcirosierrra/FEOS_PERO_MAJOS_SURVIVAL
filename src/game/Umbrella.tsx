@@ -59,7 +59,8 @@ export function Umbrella() {
     >
       <BallCollider args={[RADIUS]} position={[0, BALL_Y, 0]} restitution={1} collisionGroups={GROUPS.umbrella} />
       {/* First person: held out in front like a shield. */}
-      <group position={[0, eyes ? 2.4 : 0, 0]} scale={eyes ? 0.6 : 1}>
+      {/* First person draws its own umbrella in front of the camera (see CameraRig). */}
+      <group visible={!eyes}>
       <Stand height={0} lift={-0.9}>
       <group ref={pivot}>
         <group ref={visual} position={[0, OFFSET_Y, 0.2]}>

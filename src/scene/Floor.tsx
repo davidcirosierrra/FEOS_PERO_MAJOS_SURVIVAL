@@ -12,8 +12,8 @@ const H = 60
 const Z = -4
 
 /** Scrolling Bilbao-tile pavement: the band is walking towards the stage. */
-export function Floor({ speed = 2 }: { speed?: number }) {
-  const eyes = useEyes()
+export function Floor({ speed = 2, topDown = false }: { speed?: number; topDown?: boolean }) {
+  const eyes = useEyes() && !topDown
   const tex = useMemo(() => {
     const t = new THREE.CanvasTexture(bilbaoTileCanvas())
     t.magFilter = THREE.NearestFilter

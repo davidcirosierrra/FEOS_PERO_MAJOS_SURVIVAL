@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import { jumpPose } from '../game/jump'
 import { field, liveThreats, playerState, useGame } from '../game/store'
 import { useSettings } from '../settings'
-import { RIFLE_BASSIST, RIFLE_PIG } from '../voxel/sprites.gen'
+import { RIFLE_BASSIST, RIFLE_PIG, UMBRELLA_FP } from '../voxel/sprites.gen'
 import { Voxel } from '../voxel/Voxel'
 import { CAMERA_Z, FOV } from './PixelCanvas'
 import { Scenery } from './Scenery'
@@ -64,6 +64,8 @@ export function CameraRig() {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
   const character = useSettings((s) => s.character)
   const rifle = useRef<THREE.Group>(null)
+  const umbrella = useRef<THREE.Group>(null)
+  const umbrellaOpenedAt = useRef(0)
   const recoil = useRef(0)
   const lastShot = useRef(0)
 
@@ -115,6 +117,20 @@ export function CameraRig() {
       g.rotateZ(0.12)
       g.visible = !s.gameOver
     }
+
+    // Umbrella: held out in front, seen from behind (inside of the canopy), see-through.
+    const u = umbrella.current
+    if (u) {
+      if (s.umbrellaOpen && !u.visible) umbrellaOpenedAt.current = now
+      u.visible = s.umbrellaOpen && !s.gameOver
+      if (u.visible) {
+        const k = Math.min(1, (now - umbrellaOpenedAt.current) / 140)
+        _off.set(-0.02, -0.12 + bob * 0.4, -1.05).applyQuaternion(camera.quaternion)
+        u.position.copy(camera.position).add(_off)
+        u.quaternion.copy(camera.quaternion)
+        u.scale.setScalar(Math.max(0.2, Math.round(k * 4) / 4))
+      }
+    }
   })
 
   if (!eyes) return null
@@ -123,6 +139,9 @@ export function CameraRig() {
       <color attach="background" args={['#05030c']} />
       <fog attach="fog" args={['#2a1a30', 14, 40]} />
       <Scenery />
+      <group ref={umbrella} visible={false}>
+        <Voxel pattern={UMBRELLA_FP} size={0.015} depth={1} opacity={0.62} basic />
+      </group>
       <group ref={rifle}>
         <Voxel pattern={character === 'pig' ? RIFLE_PIG : RIFLE_BASSIST} size={0.012} depth={3} />
       </group>

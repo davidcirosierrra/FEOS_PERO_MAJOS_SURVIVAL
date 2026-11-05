@@ -3,7 +3,7 @@ import { sfx, unlockAudio } from '../audio'
 import { ConfigPanel } from '../components/Config'
 import { PixelSprite } from '../components/PixelSprite'
 import { useSettings } from '../settings'
-import { CHARACTERS, type CharacterId } from '../voxel/theme'
+import { CHARACTERS, PLAYABLE } from '../voxel/theme'
 import { useGame } from '../game/store'
 import { calibrate, input, readTilt, sensorAlive, startInput } from '../input'
 import { pad } from '../storage'
@@ -55,10 +55,10 @@ function CharacterSelect() {
   const set = useSettings((s) => s.set)
   return (
     <div className="char-select intro" onPointerDown={(e) => e.stopPropagation()}>
-      {(Object.keys(CHARACTERS) as CharacterId[]).map((id) => (
+      {PLAYABLE.map((id) => (
         <button
           key={id}
-          className={`char-card ${character === id ? 'on' : ''}`}
+          className={`char-card ${character === id ? 'on' : ''} ${PLAYABLE.length === 1 ? 'solo' : ''}`}
           onClick={() => {
             unlockAudio()
             sfx.click()

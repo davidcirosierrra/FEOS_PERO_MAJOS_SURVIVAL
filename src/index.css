@@ -121,8 +121,10 @@ body,
   text-align: center;
   line-height: 1.25;
 }
-.title-line {
+.title .title-line {
   display: block;
+  opacity: 1;
+  animation: none;
 }
 .subtitle {
   font-size: 11px;
@@ -667,4 +669,15 @@ body,
 .edge-warn.right {
   right: 4px;
   border-left: 24px solid var(--red);
+}
+
+/* Only one playable character: show it as a hero card, not a choice */
+.char-card.solo {
+  border-color: transparent;
+  background: none;
+  box-shadow: none;
+  cursor: default;
+}
+.char-card.solo svg {
+  height: 110px;
 }

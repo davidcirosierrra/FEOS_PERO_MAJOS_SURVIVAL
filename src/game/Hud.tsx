@@ -34,7 +34,7 @@ export function Hud() {
       {wave > 0 && (
         // Remounts on every new level so the slide-in animation replays.
         <div key={wave} className="level-title">
-          MAILA {wave}
+          {wave}. MAILA
           {wave % BOSS_EVERY === 0 && <small>BURUZAGIA</small>}
         </div>
       )}

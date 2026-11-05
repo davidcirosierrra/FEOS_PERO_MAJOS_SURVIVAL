@@ -15,6 +15,12 @@ const crop = (p: Pattern, r0: number, r1: number, c0: number, c1: number): Patte
   rows: p.rows.slice(r0, r1).map((r) => r.slice(c0, c1)),
 })
 
+/**
+ * Characters you can currently pick. The bass player is kept (sprite, rifle, scream) but parked:
+ * add 'bassist' back here to bring the character select back.
+ */
+export const PLAYABLE: CharacterId[] = ['pig']
+
 export const CHARACTERS: Record<CharacterId, { name: string; pattern: Pattern; head: Pattern }> = {
   bassist: { name: 'BAXU-JOTZAILEA', pattern: BASSIST, head: crop(BASSIST, 0, 20, 5, 19) },
   pig: { name: 'TXERRIA', pattern: PIG, head: crop(PIG, 0, 14, 3, 19) },

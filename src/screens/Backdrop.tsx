@@ -74,7 +74,7 @@ function Flying() {
 export function Backdrop() {
   return (
     <PixelCanvas>
-      <Floor speed={1} />
+      <Floor speed={1} topDown />
       <Crowd />
       <Flying />
     </PixelCanvas>
