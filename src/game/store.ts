@@ -152,7 +152,7 @@ export const useGame = create<State>((set, get) => ({
         delay: i * 0.12,
       })
     }
-    set({ wave: n, enemies, banner: `WAVE ${n}` })
+    set({ wave: n, enemies })
   },
 
   clearBanner: () => set({ banner: null }),

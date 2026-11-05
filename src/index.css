@@ -402,3 +402,36 @@ body,
     height: auto;
   }
 }
+
+/* Level title: slides in from the left, holds, leaves to the right (same look as the PARANOID logo). */
+.level-title {
+  position: absolute;
+  top: 40%;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: clamp(20px, 7.5vw, 34px);
+  letter-spacing: 2px;
+  color: var(--green);
+  text-shadow:
+    3px 3px 0 #0b5c22,
+    -2px 0 0 var(--pink);
+  transform: translateX(-100%);
+  animation: level-slide 2.4s forwards;
+}
+@keyframes level-slide {
+  0% {
+    transform: translateX(-100%);
+    animation-timing-function: steps(8, end);
+  }
+  25% {
+    transform: translateX(0);
+  }
+  75% {
+    transform: translateX(0);
+    animation-timing-function: steps(8, end);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}

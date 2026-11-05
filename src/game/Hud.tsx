@@ -27,6 +27,12 @@ export function Hud() {
         </div>
       </div>
 
+      {wave > 0 && (
+        // Remounts on every new level so the slide-in animation replays.
+        <div key={wave} className="level-title">
+          LEVEL {wave}
+        </div>
+      )}
       {banner && <div className="banner blink-slow">{banner}</div>}
       <SensorWarning />
 
@@ -46,7 +52,7 @@ export function Hud() {
           <Meter label="UMB" readyKey="umbrellaReadyAt" total={UMBRELLA_COOLDOWN_MS} className="umb" />
           <Meter label="LOOP" readyKey="jumpReadyAt" total={JUMP_CHARGE_MS} className="jump" />
         </div>
-        <div className="wave-n">W{wave}</div>
+        <div className="wave-n">L{wave}</div>
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useGame } from './store'
 
-/** Spawns waves when the screen is cleared and hides the wave banner. */
+/** Spawns waves when the screen is cleared and hides short banners (HULL +1…). */
 export function Director() {
   const remaining = useGame((s) => s.enemies.length)
   const wave = useGame((s) => s.wave)
