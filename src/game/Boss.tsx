@@ -7,6 +7,7 @@ import { patternSize } from '../voxel/patterns'
 import { BAR_GRID as TRUCK_GRID, BAR_PARTS as TRUCK_PARTS } from '../voxel/bar'
 import { PIZZA as COOKIE } from '../voxel/theme'
 import { Voxel } from '../voxel/Voxel'
+import { FLY_Z, Stand } from '../scene/View'
 import { boss as bossCfg, COOKIE_PUSH, GROUPS, TRUCK_VOXEL as S } from './config'
 import { field, useGame, type Cookie } from './store'
 
@@ -123,11 +124,13 @@ function Truck() {
             />
           ),
         )}
+        <Stand height={HALF_H * 2}>
         <group ref={visual}>
           {PARTS.map((p, i) =>
             i < lost ? null : <Voxel key={p.name} pattern={p.pattern} size={S} depth={p.front ? 2 : 4} position={[p.cx, p.cy, p.front ? 0.3 : 0]} />,
           )}
         </group>
+        </Stand>
       </RigidBody>
       {debris.map((d) => (
         <PartDebris key={d.id} d={d} onDone={() => setDebris((all) => all.filter((x) => x.id !== d.id))} />
@@ -207,9 +210,11 @@ const CookieBody = memo(function CookieBody({ c }: { c: Cookie }) {
     >
       <BallCollider args={[COOKIE_R]} mass={1} restitution={1} friction={0} collisionGroups={GROUPS.cookie} />
       <BallCollider args={[COOKIE_R * 0.9]} sensor mass={0} collisionGroups={GROUPS.enemyShot} />
-      <group ref={visual}>
-        <Voxel pattern={COOKIE} size={COOKIE_SIZE} depth={2} />
-      </group>
+      <Stand height={COOKIE_R * 2} lift={FLY_Z - COOKIE_R}>
+        <group ref={visual}>
+          <Voxel pattern={COOKIE} size={COOKIE_SIZE} depth={2} />
+        </group>
+      </Stand>
     </RigidBody>
   )
 })

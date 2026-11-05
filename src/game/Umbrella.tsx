@@ -4,6 +4,8 @@ import { useRef } from 'react'
 import type * as THREE from 'three'
 import { patternSize, UMBRELLA } from '../voxel/patterns'
 import { Voxel } from '../voxel/Voxel'
+import { Stand, useEyes } from '../scene/View'
+import { useSettings } from '../settings'
 import { GROUPS } from './config'
 import { jumpPose } from './jump'
 import { field, playerState, useGame } from './store'
@@ -19,6 +21,7 @@ const BALL_Y = OFFSET_Y + HEIGHT / 2 - RADIUS
 
 /** Follows the saucer while open (swipe up). */
 export function Umbrella() {
+  const eyes = useEyes()
   const body = useRef<RapierRigidBody>(null)
   const visual = useRef<THREE.Group>(null)
   const pivot = useRef<THREE.Group>(null)
@@ -28,7 +31,7 @@ export function Umbrella() {
     const b = body.current
     const now = performance.now()
     // Loop together with the saucer: same arc and flip around the ship's centre.
-    const pose = jumpPose(now, useGame.getState().jumpStart, playerState.x)
+    const pose = useSettings.getState().camera === 'eyes' ? null : jumpPose(now, useGame.getState().jumpStart, playerState.x)
     if (pivot.current) {
       pivot.current.position.set(pose?.x ?? 0, pose?.y ?? 0, pose?.z ?? 0)
       pivot.current.rotation.x = pose?.flip ?? 0
@@ -55,10 +58,15 @@ export function Umbrella() {
       userData={{ kind: 'umbrella' }}
     >
       <BallCollider args={[RADIUS]} position={[0, BALL_Y, 0]} restitution={1} collisionGroups={GROUPS.umbrella} />
+      {/* First person: held out in front like a shield. */}
+      <group position={[0, eyes ? 2.4 : 0, 0]} scale={eyes ? 0.6 : 1}>
+      <Stand height={0} lift={-0.9}>
       <group ref={pivot}>
         <group ref={visual} position={[0, OFFSET_Y, 0.2]}>
           <Voxel pattern={UMBRELLA} size={UMBRELLA_VOXEL} depth={2} />
         </group>
+      </group>
+      </Stand>
       </group>
     </RigidBody>
   )

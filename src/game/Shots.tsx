@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { grayPattern, patternSize, type Pattern } from '../voxel/patterns'
 import { FORK, THROWN } from '../voxel/theme'
 import { Voxel } from '../voxel/Voxel'
+import { FLY_Z, Stand } from '../scene/View'
 import { FOOD_VOXEL, GROUPS, PLAYER_SHOT_SPEED, RED_DEFLECT_DEG } from './config'
 import { field, useGame, type FoodShot, type Shot } from './store'
 
@@ -33,7 +34,9 @@ const PlayerShot = memo(function PlayerShot({ s }: { s: Shot }) {
       userData={{ kind: 'playerShot', id: s.id }}
     >
       <CuboidCollider args={[0.1, 0.25, 0.3]} sensor mass={0.05} collisionGroups={GROUPS.playerShot} />
-      <Voxel pattern={FORK} size={0.055} depth={1} basic />
+      <Stand height={0.5} lift={FLY_Z + 0.1}>
+        <Voxel pattern={FORK} size={0.055} depth={1} basic />
+      </Stand>
     </RigidBody>
   )
 })
@@ -144,7 +147,9 @@ const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
         friction={0}
         collisionGroups={GROUPS.foodSolid}
       />
-      <FoodLook pattern={pattern} markHarmless={markHarmless} />
+      <Stand height={h * FOOD_VOXEL} lift={FLY_Z}>
+        <FoodLook pattern={pattern} markHarmless={markHarmless} />
+      </Stand>
     </RigidBody>
   )
 })

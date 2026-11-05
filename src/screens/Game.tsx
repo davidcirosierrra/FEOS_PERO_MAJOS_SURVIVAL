@@ -14,6 +14,7 @@ import { UmbrellaSlot } from '../game/Umbrella'
 import { field, useGame } from '../game/store'
 import { CAMERA_Z, FOV, PixelCanvas } from '../scene/PixelCanvas'
 import { Floor } from '../scene/Floor'
+import { CameraRig } from '../scene/View'
 
 /** Derives the playfield size from the visible area at z = 0. */
 function useField() {
@@ -95,6 +96,7 @@ export function Game() {
       ref={(el) => el?.focus()}
     >
       <PixelCanvas>
+        <CameraRig />
         <Floor speed={2.2} />
         <World />
       </PixelCanvas>

@@ -5,6 +5,7 @@ import type * as THREE from 'three'
 import { patternSize } from '../voxel/patterns'
 import { FANS } from '../voxel/theme'
 import { Voxel } from '../voxel/Voxel'
+import { Stand } from '../scene/View'
 import { FAN_VOXEL, GROUPS, wave as waveCfg } from './config'
 import { field, useGame, type Enemy as EnemyT } from './store'
 
@@ -71,9 +72,11 @@ export function Enemy({ e }: { e: EnemyT }) {
       }}
     >
       <CuboidCollider args={[(w * FAN_VOXEL) / 2.2, (h * FAN_VOXEL) / 2.2, 0.3]} collisionGroups={GROUPS.enemy} />
-      <group ref={visual}>
-        <Voxel pattern={FANS[e.look]} size={FAN_VOXEL} depth={3} />
-      </group>
+      <Stand height={h * FAN_VOXEL}>
+        <group ref={visual}>
+          <Voxel pattern={FANS[e.look]} size={FAN_VOXEL} depth={3} />
+        </group>
+      </Stand>
     </RigidBody>
   )
 }

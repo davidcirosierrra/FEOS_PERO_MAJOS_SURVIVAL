@@ -81,7 +81,8 @@ export function Player() {
     const f = fat.current
     if (f) f.scale.x += (STAGE_WIDTH[stage] - f.scale.x) * 0.2
 
-    v.visible = gameOver ? false : now > invulnUntil || Math.floor(now / 90) % 2 === 0
+    // In first person we *are* the character: only the rifle is drawn (see CameraRig).
+    v.visible = gameOver || useSettings.getState().camera === 'eyes' ? false : now > invulnUntil || Math.floor(now / 90) % 2 === 0
   })
 
   return (

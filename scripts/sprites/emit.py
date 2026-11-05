@@ -7,7 +7,7 @@ import sys; sys.path.insert(0, HERE)
 def load(name):
     spec = importlib.util.spec_from_file_location(name, os.path.join(HERE, f'{name}.py'))
     m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m
-b = load('bassist'); p = load('pig'); f = load('fans'); it = load('items'); fe = load('felipe')
+b = load('bassist'); p = load('pig'); f = load('fans'); it = load('items'); fe = load('felipe'); rf = load('rifle')
 def ts(o, name):
     pal = ', '.join(f"{k}: '{v}'" for k, v in o.pal.items() if any(k in r for r in o.rows()))
     rows = ''.join(f"\n    '{r}'," for r in o.rows())
@@ -17,6 +17,7 @@ out.append(ts(b.o, 'BASSIST')); out.append(ts(p.o, 'PIG'))
 names = {'metal':'FAN_METAL','bandtee':'FAN_BANDTEE','tourist':'FAN_TOURIST','punk':'FAN_PUNK'}
 for k, S in f.out.items(): out.append(ts(S.outline(), names[k]))
 for k, S in it.out.items(): out.append(ts(S.outline(), k.upper()))
+for k, S in rf.parts.items(): out.append(ts(S, 'RIFLE_' + k.upper()))
 for k, S in fe.parts.items(): out.append(ts(S, 'FELIPE_' + k.upper()))
 open(os.path.join(HERE, '..', '..', 'src', 'voxel', 'sprites.gen.ts'),'w').write('\n'.join(out))
 print('ok')

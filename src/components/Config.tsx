@@ -71,6 +71,26 @@ function Volume({ k, enabled }: { k: 'musicVol' | 'sfxVol'; enabled: 'music' | '
   )
 }
 
+/** Top-down vs first-person view. */
+function CameraToggle() {
+  const camera = useSettings((s) => s.camera)
+  const set = useSettings((s) => s.set)
+  return (
+    <div className="cfg-row">
+      <span>KAMERA</span>
+      <button
+        className="pixel-btn small"
+        onClick={() => {
+          set({ camera: camera === 'top' ? 'eyes' : 'top' })
+          sfx.click()
+        }}
+      >
+        {camera === 'top' ? 'GOITIK' : 'BEGIETATIK'}
+      </button>
+    </div>
+  )
+}
+
 /** Audio / vibration settings. In game it doubles as the pause menu. */
 export function ConfigPanel({ onClose, title = 'EZARPENAK' }: { onClose: () => void; title?: string }) {
   const inGame = useGame((s) => s.screen === 'game')
@@ -90,6 +110,7 @@ export function ConfigPanel({ onClose, title = 'EZARPENAK' }: { onClose: () => v
         <Toggle k="sfx" label="SOINUAK" />
         <Volume k="sfxVol" enabled="sfx" />
         <Toggle k="vibration" label="BIBRAZIOA" />
+        <CameraToggle />
       </div>
       <div className="buttons">
         <button

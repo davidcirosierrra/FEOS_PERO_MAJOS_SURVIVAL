@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { MEDAL_COLORS, type Pattern } from '../voxel/patterns'
 import { KALIMOTXO, PICKS } from '../voxel/theme'
 import { Voxel } from '../voxel/Voxel'
+import { FLY_Z, Stand } from '../scene/View'
 import { BANANA_EVERY_MS, GROUPS, MEDAL_EVERY_MS } from './config'
 import { field, nextMedal, useGame, type Pickup as PickupT, type PickupKind } from './store'
 
@@ -81,6 +82,7 @@ const Pickup = memo(function Pickup({ p }: { p: PickupT }) {
       }}
     >
       <CuboidCollider args={[0.65, 0.5, 0.4]} sensor mass={0.05} collisionGroups={GROUPS.powerup} />
+      <Stand height={1} lift={FLY_Z}>
       <sprite ref={glow} position={[0, 0, -0.3]}>
         <spriteMaterial map={tex} blending={THREE.AdditiveBlending} depthWrite={false} transparent />
       </sprite>
@@ -91,6 +93,7 @@ const Pickup = memo(function Pickup({ p }: { p: PickupT }) {
         <torusGeometry args={[0.85, 0.05, 4, 20]} />
         <meshBasicMaterial color={look.ring} />
       </mesh>
+      </Stand>
     </RigidBody>
   )
 })
