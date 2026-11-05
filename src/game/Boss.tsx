@@ -9,7 +9,7 @@ import { PIZZA as COOKIE } from '../voxel/theme'
 import { Voxel } from '../voxel/Voxel'
 import { FLY_Z, Stand } from '../scene/View'
 import { boss as bossCfg, COOKIE_PUSH, GROUPS, TRUCK_VOXEL as S } from './config'
-import { field, useGame, type Cookie } from './store'
+import { field, liveThreats, useGame, type Cookie } from './store'
 
 /** Parts with their centre offset (world units) inside the truck. */
 const PARTS = TRUCK_PARTS.map((p) => {
@@ -173,12 +173,14 @@ const CookieBody = memo(function CookieBody({ c }: { c: Cookie }) {
   const remove = useGame((s) => s.removeCookie)
   const pushCookie = useGame((s) => s.pushCookie)
   const init = useMemo(() => ({ pos: [c.x, c.y, 0] as [number, number, number], vel: [c.vx, -c.speed, 0] as [number, number, number] }), [c])
+  useEffect(() => () => void liveThreats.delete(c.id), [c.id])
 
   useFrame((_, dt) => {
     const b = body.current
     if (!b) return
     const p = b.translation()
     if (p.y < -field.halfH - 2 || p.y > field.halfH + 3) remove(c.id)
+    liveThreats.set(c.id, { x: p.x, y: p.y, harmless: false })
     if (visual.current) visual.current.rotation.z += b.linvel().x * -dt * 1.5 + dt * 0.8 // rolls as it drifts
   })
 

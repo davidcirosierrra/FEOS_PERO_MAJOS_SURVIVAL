@@ -10,7 +10,7 @@ void startInput()
 
 if (location.search.includes('debug')) {
   void Promise.all([import('./input'), import('./game/store')]).then(([i, st]) => {
-    Object.assign(window, { __paranoid: { input: i.input, player: st.playerState, store: st.useGame } })
+    Object.assign(window, { __paranoid: { input: i.input, player: st.playerState, store: st.useGame, threats: st.liveThreats } })
   })
 }
 

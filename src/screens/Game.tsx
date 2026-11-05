@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { PickupDropper, Pickups } from '../game/Pickups'
 import { BossLayer } from '../game/Boss'
 import { ConfigButton, ConfigPanel } from '../components/Config'
+import { EdgeWarnings } from '../components/EdgeWarnings'
 import { Director } from '../game/Director'
 import { Enemies } from '../game/Enemy'
 import { Explosions } from '../game/Explosions'
@@ -101,6 +102,7 @@ export function Game() {
         <World />
       </PixelCanvas>
       <Hud />
+      <EdgeWarnings />
       <Director />
       <PickupDropper />
       {!gameOver && <ConfigButton />}

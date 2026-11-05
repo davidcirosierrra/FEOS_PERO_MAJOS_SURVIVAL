@@ -170,122 +170,136 @@ export const sfx = {
 }
 
 // ---------------------------------------------------------------- music
+// Fast street-punk in the spirit of 80s Basque/Spanish punk (all original riffs): distorted power
+// chords in eighths, driving bass, skank beat (kick/snare alternating on every eighth).
 
 export type Track = 'menu' | 'game' | 'boss'
 
 type Song = {
   bpm: number
-  /** One chord per bar: [bass midi, arpeggio notes] */
-  bars: [number, number[]][]
-  lead: Wave
-  arpVol: number
-  drums: 'light' | 'full' | 'hard'
-  /** Optional melody, one entry per 16th step across the whole loop (0 = rest). */
-  melody?: number[]
+  /** Power-chord roots (midi), one per half bar (8 sixteenths). */
+  riff: number[]
+  /** Which eighths (0..7 within half a bar) are palm-muted chugs. */
+  mute: number[]
+  drums: 'oi' | 'skank'
+  /** Optional lead line, one entry per 16th across the loop (0 = rest). */
+  lead?: number[]
 }
 
+const E = 40, F = 41, G = 43, A = 45, Bb = 46, B = 47, C = 48, D = 50
 const SONGS: Record<Track, Song> = {
-  menu: {
-    bpm: 100,
-    lead: 'triangle',
-    arpVol: 0.07,
-    drums: 'light',
-    bars: [
-      [45, [69, 72, 76, 81]],
-      [41, [65, 69, 72, 77]],
-      [48, [67, 72, 76, 79]],
-      [43, [67, 71, 74, 79]],
-    ],
-  },
+  // mid-tempo "oi!" stomp for the menu
+  menu: { bpm: 152, drums: 'oi', mute: [1, 3, 5], riff: [D, D, A, A, B, B, G, A] },
+  // fast skank for the levels
   game: {
-    bpm: 132,
-    lead: 'square',
-    arpVol: 0.035,
-    drums: 'full',
-    bars: [
-      [45, [69, 72, 76, 72]],
-      [41, [69, 72, 77, 72]],
-      [48, [67, 72, 76, 72]],
-      [43, [67, 71, 74, 71]],
-      [45, [69, 72, 76, 81]],
-      [41, [65, 69, 72, 77]],
-      [43, [67, 71, 74, 79]],
-      [40, [68, 71, 76, 80]],
-    ],
+    bpm: 196,
+    drums: 'skank',
+    mute: [1, 2, 5, 6],
+    riff: [E, E, G, A, E, E, D, C, E, E, G, A, C, B, A, B],
     // prettier-ignore
-    melody: [
-      81,0,0,79, 0,76,0,0, 74,0,76,0, 0,0,0,0,
-      77,0,0,76, 0,74,0,0, 72,0,74,0, 0,0,0,0,
-      76,0,0,74, 0,72,0,0, 71,0,72,0, 74,0,0,0,
-      74,0,0,0, 71,0,67,0, 71,0,74,0, 79,0,0,0,
-      81,0,0,83, 0,84,0,0, 83,0,81,0, 0,0,79,0,
-      77,0,0,79, 0,81,0,0, 79,0,77,0, 76,0,0,0,
-      74,0,0,76, 0,77,0,0, 79,0,77,0, 74,0,0,0,
-      76,0,0,0, 80,0,0,0, 83,0,0,0, 88,0,0,0,
+    lead: [
+      ...Array(64).fill(0),
+      76,0,76,0, 79,0,0,0, 81,0,79,0, 76,0,0,0,
+      74,0,74,0, 76,0,0,0, 72,0,71,0, 0,0,0,0,
+      76,0,76,0, 79,0,0,0, 81,0,83,0, 84,0,0,0,
+      83,0,81,0, 79,0,0,0, 81,0,0,0, 83,0,0,0,
     ],
   },
-  boss: {
-    bpm: 152,
-    lead: 'sawtooth',
-    arpVol: 0.03,
-    drums: 'hard',
-    bars: [
-      [40, [64, 67, 71, 76]],
-      [40, [64, 67, 71, 75]],
-      [36, [64, 67, 72, 76]],
-      [38, [62, 66, 69, 74]],
-      [40, [64, 67, 71, 76]],
-      [41, [65, 68, 72, 77]],
-      [39, [63, 66, 71, 75]],
-      [35, [63, 66, 71, 75]],
-    ],
-    // prettier-ignore
-    melody: [
-      76,0,76,0, 79,0,76,0, 74,0,72,0, 71,0,0,0,
-      76,0,76,0, 79,0,81,0, 83,0,0,0, 0,0,0,0,
-      84,0,83,0, 81,0,79,0, 81,0,79,0, 76,0,0,0,
-      74,0,0,0, 78,0,0,0, 81,0,78,0, 74,0,0,0,
-      76,0,76,0, 79,0,76,0, 74,0,72,0, 71,0,0,0,
-      77,0,77,0, 80,0,77,0, 76,0,74,0, 72,0,0,0,
-      75,0,0,0, 78,0,0,0, 83,0,82,0, 78,0,0,0,
-      75,0,78,0, 83,0,87,0, 86,0,0,0, 0,0,0,0,
-    ],
-  },
+  // even faster, chromatic and nasty for the bar boss
+  boss: { bpm: 214, drums: 'skank', mute: [1, 3, 5, 7], riff: [A, A, Bb, A, A, A, C, Bb, A, A, Bb, A, F, F, E, E] },
 }
 
 let wantedTrack: Track | null = null
 let timer: ReturnType<typeof setInterval> | null = null
 let step = 0
 let nextTime = 0
+let guitarIn: GainNode | null = null
+
+/** Distortion chain for the guitar (built lazily on the music bus). */
+function guitarBus() {
+  if (guitarIn || !ctx) return guitarIn
+  const pre = ctx.createGain()
+  pre.gain.value = 3.5
+  const shaper = ctx.createWaveShaper()
+  const n = 1024
+  const curve = new Float32Array(n)
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * 2 - 1
+    curve[i] = Math.tanh(x * 6) // hard-ish clipping fuzz
+  }
+  shaper.curve = curve
+  const tone = ctx.createBiquadFilter()
+  tone.type = 'lowpass'
+  tone.frequency.value = 3200
+  const out = ctx.createGain()
+  out.gain.value = 0.16
+  pre.connect(shaper).connect(tone).connect(out).connect(musicBus)
+  guitarIn = pre
+  return pre
+}
+
+/** One power-chord stab: root + fifth + octave, two slightly detuned saws each. */
+function powerChord(root: number, t: number, dur: number, muted: boolean) {
+  const bus = guitarBus()
+  if (!ctx || !bus) return
+  for (const iv of [0, 7, 12]) {
+    for (const det of [-7, 7]) {
+      const o = ctx.createOscillator()
+      o.type = 'sawtooth'
+      o.frequency.value = midi(root + 12 + iv)
+      o.detune.value = det
+      const g = ctx.createGain()
+      const v = muted ? 0.12 : 0.2
+      g.gain.setValueAtTime(v, t)
+      g.gain.exponentialRampToValueAtTime(0.001, t + (muted ? dur * 0.45 : dur * 0.95))
+      o.connect(g).connect(bus)
+      o.start(t)
+      o.stop(t + dur)
+    }
+  }
+}
 
 function scheduleStep(song: Song, s: number, t: number) {
-  const bars = song.bars.length
-  const bar = Math.floor(s / 16) % bars
   const i = s % 16
-  const [bass, arp] = song.bars[bar]
+  const half = Math.floor(s / 8) % song.riff.length
+  const root = song.riff[half]
   const sixteenth = 60 / song.bpm / 4
 
-  // Bass: driving 8ths with an octave jump.
+  // Guitar + bass on every eighth.
   if (i % 2 === 0) {
-    const n = i % 8 === 6 ? bass + 12 : bass
-    tone(musicBus, midi(n), t, sixteenth * 1.8, 'triangle', 0.32)
+    const eighth = (i / 2) % 8
+    const muted = song.mute.includes(eighth % 8)
+    powerChord(root, t, sixteenth * 2, muted)
+    tone(musicBus, midi(root - 12), t, sixteenth * 1.9, 'sawtooth', 0.12)
+    tone(musicBus, midi(root - 12), t, sixteenth * 1.9, 'triangle', 0.3)
   }
-  // Arpeggio: every 16th, cycling chord tones.
-  tone(musicBus, midi(arp[i % arp.length] + (song.drums === 'light' ? 0 : 12)), t, sixteenth * 0.9, song.lead, song.arpVol)
-  // Melody.
-  if (song.melody) {
-    const m = song.melody[s % song.melody.length]
-    if (m) tone(musicBus, midi(m), t, sixteenth * 2.6, 'square', 0.06)
+  // Lead line (square, slightly detuned "second guitar").
+  if (song.lead) {
+    const m = song.lead[s % song.lead.length]
+    if (m) {
+      tone(musicBus, midi(m), t, sixteenth * 2.4, 'square', 0.05)
+      tone(musicBus, midi(m) * 1.004, t, sixteenth * 2.4, 'square', 0.035)
+    }
   }
   // Drums.
-  if (song.drums === 'light') {
-    if (i % 8 === 0) tone(musicBus, 120, t, 0.12, 'sine', 0.35, 45)
-    if (i % 4 === 2) noise(musicBus, t, 0.03, 0.06, 'highpass', 7000)
-    return
+  const kick = () => tone(musicBus, 140, t, 0.12, 'sine', 0.7, 45)
+  const snare = () => {
+    noise(musicBus, t, 0.14, 0.38, 'bandpass', 1900)
+    tone(musicBus, 190, t, 0.06, 'triangle', 0.2, 120)
   }
-  if (i % 8 === 0 || (song.drums === 'hard' && i % 8 === 3)) tone(musicBus, 150, t, 0.14, 'sine', 0.55, 40)
-  if (i % 8 === 4) noise(musicBus, t, 0.12, 0.28, 'bandpass', 1800)
-  if (i % 2 === 0 || song.drums === 'hard') noise(musicBus, t, 0.03, 0.07, 'highpass', 8000)
+  const hat = () => noise(musicBus, t, 0.035, 0.09, 'highpass', 8000)
+  if (song.drums === 'skank') {
+    // kick-snare-kick-snare on eighths, hats on top, crash every 4 bars
+    if (i % 4 === 0) kick()
+    if (i % 4 === 2) snare()
+    if (i % 2 === 0) hat()
+    if (s % 64 === 0) noise(musicBus, t, 0.9, 0.22, 'highpass', 5000)
+  } else {
+    // oi! beat: kick on 1 and 3, snare on 2 and 4, open eighths on the hats
+    if (i === 0 || i === 8 || i === 10) kick()
+    if (i === 4 || i === 12) snare()
+    if (i % 2 === 0) hat()
+  }
 }
 
 function startSequencer() {

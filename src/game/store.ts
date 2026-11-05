@@ -44,6 +44,8 @@ export type Explosion = { id: number; x: number; y: number; colors: string[]; bi
 
 /** Playfield half-size in world units, set by the game scene from the viewport. */
 export const field = { halfW: 4, halfH: 8, playerY: -6 }
+/** Live positions of things that can hurt you (food + pizzas), written by their bodies each frame. */
+export const liveThreats = new Map<number, { x: number; y: number; harmless: boolean }>()
 /** Live player position, written every frame by the player body. */
 export const playerState = { x: 0 }
 

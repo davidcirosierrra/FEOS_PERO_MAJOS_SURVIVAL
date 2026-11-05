@@ -1,13 +1,13 @@
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
-import { memo, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { grayPattern, patternSize, type Pattern } from '../voxel/patterns'
 import { FORK, THROWN } from '../voxel/theme'
 import { Voxel } from '../voxel/Voxel'
 import { FLY_Z, Stand } from '../scene/View'
 import { FOOD_VOXEL, GROUPS, PLAYER_SHOT_SPEED, RED_DEFLECT_DEG } from './config'
-import { field, useGame, type FoodShot, type Shot } from './store'
+import { field, liveThreats, useGame, type FoodShot, type Shot } from './store'
 import { useSettings } from '../settings'
 
 // Velocity props are only meant as the *initial* velocity: keep them referentially stable (and the
@@ -86,12 +86,15 @@ const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
   // Turns grey/translucent once harmless. Kept in a child so the RigidBody itself never re-renders
   // (a re-render would make @react-three/rapier re-apply its props mid-flight).
   const markHarmless = useRef<() => void>(() => {})
+  const harmlessRef = useRef(false)
   useFrame(() => {
     const b = body.current
     if (!b) return
     const p = b.translation()
     if (p.y < -field.halfH - 1 || p.y > field.halfH + 2 || Math.abs(p.x) > field.halfW + 2 || p.z < -FALL_GONE_Z) remove(s.id)
+    liveThreats.set(s.id, { x: p.x, y: p.y, harmless: harmlessRef.current })
   })
+  useEffect(() => () => void liveThreats.delete(s.id), [s.id])
   return (
     <RigidBody
       ref={body}
@@ -111,6 +114,7 @@ const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
         if (!result) return
         // Shot down: harmless and no more collisions from now on.
         ud.deflected = ud.falling = true
+        harmlessRef.current = true
         markHarmless.current()
         for (let i = 0; i < b.numColliders(); i++) b.collider(i).setCollisionGroups(0)
         const v = b.linvel()
@@ -141,6 +145,7 @@ const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
         if (!ud || ud.deflected || !b || other.rigidBodyObject?.userData?.kind !== 'umbrella') return
         // Harmless from now on: fly off with gravity and a wild spin.
         ud.deflected = true
+        harmlessRef.current = true
         markHarmless.current()
         b.setGravityScale(0.8, true)
         const v = b.linvel()

@@ -2,7 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useRef, type ReactNode } from 'react'
 import * as THREE from 'three'
 import { jumpPose } from '../game/jump'
-import { field, playerState, useGame } from '../game/store'
+import { field, liveThreats, playerState, useGame } from '../game/store'
 import { useSettings } from '../settings'
 import { RIFLE_BASSIST, RIFLE_PIG } from '../voxel/sprites.gen'
 import { Voxel } from '../voxel/Voxel'
@@ -13,6 +13,8 @@ export const useEyes = () => useSettings((s) => s.camera === 'eyes')
 
 /** Eye height of the player in first-person view (world units above the pavement). */
 const EYE = 1.55
+/** Camera a little behind the character's eyes so the space right beside you is visible. */
+const BACK = 1.3
 /** Height things fly at in first person (roughly chest height). */
 export const FLY_Z = 1.0
 
@@ -38,6 +40,24 @@ const _off = new THREE.Vector3()
 const _roll = new THREE.Quaternion()
 const FORWARD = new THREE.Vector3(0, 0, -1)
 
+/**
+ * Off-screen danger markers for first person: anything harmful near you that the camera can't see
+ * (beside you, or about to hit you from the side). Positions are in CSS px; read by <EdgeWarnings>.
+ */
+export const edgeWarnings: { side: -1 | 1; y: number }[] = []
+const _p = new THREE.Vector3()
+function updateEdgeWarnings(camera: THREE.Camera, size: { width: number; height: number }) {
+  edgeWarnings.length = 0
+  for (const t of liveThreats.values()) {
+    if (t.harmless || t.y > field.playerY + 6 || t.y < field.playerY - 2) continue
+    _p.set(t.x, t.y, FLY_Z).project(camera)
+    const onScreen = _p.z < 1 && Math.abs(_p.x) < 0.92 && Math.abs(_p.y) < 1
+    if (onScreen) continue
+    const y = _p.z < 1 ? Math.max(0.2, Math.min(0.85, (1 - _p.y) / 2)) : 0.75
+    edgeWarnings.push({ side: t.x >= playerState.x ? 1 : -1, y: y * size.height })
+  }
+}
+
 /** Drives the camera for the current view mode, plus the first-person fork-rifle. */
 export function CameraRig() {
   const eyes = useEyes()
@@ -50,7 +70,7 @@ export function CameraRig() {
   // Top view: fixed camera looking straight down at the play plane.
   useEffect(() => {
     if (eyes) {
-      camera.fov = 72
+      camera.fov = 88
       camera.near = 0.05
     } else {
       camera.fov = FOV
@@ -70,7 +90,7 @@ export function CameraRig() {
     const arc = pose ? pose.z / 9 : 0 // 0..1
     const bob = Math.abs(Math.sin(state.clock.elapsedTime * 9)) * 0.05
     camera.up.copy(UP_EYES)
-    camera.position.set(playerState.x, field.playerY - 0.4, EYE + bob + arc * 2.6)
+    camera.position.set(playerState.x, field.playerY - BACK, EYE + bob + arc * 2.6)
     _look.set(playerState.x, field.playerY + 30, -5)
     camera.lookAt(_look)
     // Jump = barrel roll around the view direction.
@@ -78,6 +98,8 @@ export function CameraRig() {
       _roll.setFromAxisAngle(FORWARD, pose.flip)
       camera.quaternion.multiply(_roll)
     }
+
+    updateEdgeWarnings(camera, state.size)
 
     // Fork-rifle in the lower right of the view, kicking back on every shot.
     if (s.lastShot !== lastShot.current) {

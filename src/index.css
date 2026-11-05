@@ -643,3 +643,28 @@ body,
 .hud-bottom .meters {
   gap: 16px;
 }
+
+/* First-person off-screen danger markers */
+.edge-warnings {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.edge-warn {
+  position: absolute;
+  width: 0;
+  height: 0;
+  margin-top: -20px;
+  border-top: 20px solid transparent;
+  border-bottom: 20px solid transparent;
+  filter: drop-shadow(0 0 4px rgba(255, 46, 76, 0.9));
+  animation: blink 0.3s steps(1) infinite;
+}
+.edge-warn.left {
+  left: 4px;
+  border-right: 24px solid var(--red);
+}
+.edge-warn.right {
+  right: 4px;
+  border-left: 24px solid var(--red);
+}
