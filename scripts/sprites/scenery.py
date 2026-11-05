@@ -102,6 +102,22 @@ St.rect(4,58,155,62,'d'); St.rect(4,58,155,58,'w'); St.rect(4,63,155,75,'D')
 for x in range(4,156,10): St.rect(x,63,x,75,'d')
 St.rect(20,64,140,65,'x')                                   # pink LED strip
 
+# ---------------------------------------------------------------- roof (terracotta tiles + wooden eave)
+rp = {'t':'#b8502e','T':'#8a3a22','h':'#d8744a','k':'#4a2216','w':'#6b3b1e','W':'#4a2812'}
+Rf = Sprite(32, 24, rp)
+Rf.rect(0,0,31,19,'t')
+for row in range(5):                      # overlapping rows of curved tiles
+    y0 = row*4
+    off = 4 if row % 2 else 0
+    for x in range(32):
+        c = ((x + off) % 8)
+        if c == 0: Rf.rect(x, y0, x, y0+3, 'k')          # gap between tiles
+        elif c in (1, 2): Rf.rect(x, y0, x, y0+3, 'h')   # lit side of the curve
+        elif c in (6, 7): Rf.rect(x, y0, x, y0+3, 'T')   # shadow side
+    Rf.rect(0, y0+3, 31, y0+3, 'T')
+Rf.rect(0,20,31,21,'w'); Rf.rect(0,22,31,23,'W')          # wooden eave at the bottom edge
+for x in range(0,32,4): Rf.px(x,22,'k')                   # rafter ends
+
 if __name__ == '__main__':
     from PIL import Image
     def png(S, path, sc, bg=(42,26,48)):

@@ -48,7 +48,7 @@ export function Hud() {
           ))}
         </div>
         <div className="hull">
-          <span className="label">TRIPA</span>
+          <span className="label">TXANDA</span>
           {Array.from({ length: HITS_PER_LIFE }, (_, i) => (
             <i key={i} className={i < HITS_PER_LIFE - stage ? 'on' : ''} />
           ))}

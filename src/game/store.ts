@@ -445,7 +445,7 @@ export const useGame = create<State>((set, get) => ({
     const explosions = [...s.explosions, { id: id(), x: playerState.x, y: field.playerY + 0.4, colors }]
     sfx.pickup(p.kind !== 'banana' && s.medals.includes(p.kind) ? 'dup' : p.kind)
     if (p.kind === 'banana') {
-      if (s.stage > 0) return set({ pickups, explosions, stage: s.stage - 1, banner: 'TRIPA -1' })
+      if (s.stage > 0) return set({ pickups, explosions, stage: s.stage - 1, banner: 'KALIMOTXO! +1' })
       return set({ pickups, explosions, score: s.score + SCORE_BANANA_FULL, banner: `+${SCORE_BANANA_FULL}` })
     }
     if (s.medals.includes(p.kind)) {

@@ -36,7 +36,7 @@ const PlayerShot = memo(function PlayerShot({ s }: { s: Shot }) {
     >
       <CuboidCollider args={[0.1, 0.25, 0.3]} sensor mass={0.05} collisionGroups={GROUPS.playerShot} />
       <Stand height={0.5} lift={FLY_Z + 0.1}>
-        <Voxel pattern={FORK} size={0.055} depth={1} basic />
+        <Voxel pattern={FORK} size={0.075} depth={1} basic />
       </Stand>
     </RigidBody>
   )

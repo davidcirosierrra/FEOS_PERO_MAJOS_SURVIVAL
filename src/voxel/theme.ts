@@ -34,7 +34,10 @@ export const THROWN: Record<string, Pattern> = { lighter: G.LIGHTER, cd: G.CD, w
 export const FAN_THROWS = ['lighter', 'cd', 'wine']
 
 /** Pink fork bullets. */
-export const FORK: Pattern = G.FORK
+export const FORK: Pattern = {
+  palette: { p: '#ff7eb6', w: '#ffd1e6' },
+  rows: ['p.p.p', 'w.w.w', 'ppppp', '.ppp.', '..p..', '..p..', '..p..'],
+}
 
 /** Healing pick-up: a katxi of kalimotxo (wine + cola) with ice and a straw. */
 export const KALIMOTXO: Pattern = G.KALIMOTXO

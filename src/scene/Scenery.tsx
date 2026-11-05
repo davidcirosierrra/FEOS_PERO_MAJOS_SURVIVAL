@@ -3,7 +3,7 @@ import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { field, useGame } from '../game/store'
 import type { Pattern } from '../voxel/patterns'
-import { STAGE, WALL_TILE } from '../voxel/sprites.gen'
+import { ROOF_TILE, STAGE, WALL_TILE } from '../voxel/sprites.gen'
 
 /** Pixel pattern → nearest-filtered texture (palette colours may carry alpha: #rrggbbaa). */
 function patternTexture(p: Pattern) {
@@ -64,6 +64,46 @@ function Walls({ speed }: { speed: number }) {
   )
 }
 
+const ROOF_W = 2.4
+const ROOF_TILE_LEN = (ROOF_W * 32) / 24
+
+/** Tiled roofs with a wooden eave sticking out over the street from the top of each wall. */
+function Roofs({ speed }: { speed: number }) {
+  const tex = useMemo(() => {
+    const t = patternTexture(ROOF_TILE)
+    t.wrapS = THREE.RepeatWrapping
+    t.repeat.set(WALL_LEN / ROOF_TILE_LEN, 1)
+    return t
+  }, [])
+  const geo = useMemo(() => {
+    // u along the street (+y), v across the roof: v=0 (eave) towards the street, v=1 up the slope.
+    const g = new THREE.PlaneGeometry(WALL_LEN, ROOF_W)
+    g.rotateZ(Math.PI / 2)
+    return g
+  }, [])
+  useFrame((_, dt) => {
+    tex.offset.x = (tex.offset.x + (Math.min(dt, 0.05) * speed) / ROOF_TILE_LEN) % 1
+  })
+  const x = field.halfW + 0.6
+  const slope = 0.5 // radians: rises towards the outside
+  return (
+    <>
+      {[-1, 1].map((side) => (
+        <mesh
+          key={side}
+          geometry={geo}
+          // centre of the roof strip: half overhanging the street, half over the wall
+          position={[side * (x - 0.2 + (Math.cos(slope) * ROOF_W) / 2 - 0.9), 30, WALL_H + (Math.sin(slope) * ROOF_W) / 2]}
+          rotation={[0, side * -slope, 0]}
+          scale={[side, 1, 1]}
+        >
+          <meshBasicMaterial map={tex} side={THREE.DoubleSide} color="#d8d0cc" />
+        </mesh>
+      ))}
+    </>
+  )
+}
+
 const STAGE_W = 30
 const STAGE_H = (STAGE_W * 76) / 160
 
@@ -93,6 +133,7 @@ export function Scenery({ speed = 2.2 }: { speed?: number }) {
     <>
       <Sky />
       <Walls speed={speed} />
+      <Roofs speed={speed} />
       <Stage />
     </>
   )

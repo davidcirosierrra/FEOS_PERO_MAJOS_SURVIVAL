@@ -1,9 +1,11 @@
 import { useFrame, useThree } from '@react-three/fiber'
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import * as THREE from 'three'
 import { jumpPose } from '../game/jump'
 import { field, liveThreats, playerState, useGame } from '../game/store'
 import { useSettings } from '../settings'
+import { RIFLE_BASSIST, RIFLE_PIG } from '../voxel/sprites.gen'
+import { Voxel } from '../voxel/Voxel'
 import { CAMERA_Z, FOV } from './PixelCanvas'
 import { Scenery } from './Scenery'
 
@@ -34,6 +36,7 @@ export function Stand({ height, lift = 0, children }: { height: number; lift?: n
 const UP_TOP = new THREE.Vector3(0, 1, 0)
 const UP_EYES = new THREE.Vector3(0, 0, 1)
 const _look = new THREE.Vector3()
+const _off = new THREE.Vector3()
 const _roll = new THREE.Quaternion()
 const FORWARD = new THREE.Vector3(0, 0, -1)
 
@@ -59,6 +62,10 @@ function updateEdgeWarnings(camera: THREE.Camera, size: { width: number; height:
 export function CameraRig() {
   const eyes = useEyes()
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
+  const character = useSettings((s) => s.character)
+  const rifle = useRef<THREE.Group>(null)
+  const recoil = useRef(0)
+  const lastShot = useRef(0)
 
   // Top view: fixed camera looking straight down at the play plane.
   useEffect(() => {
@@ -75,7 +82,7 @@ export function CameraRig() {
     camera.updateProjectionMatrix()
   }, [eyes, camera])
 
-  useFrame((state) => {
+  useFrame((state, dt) => {
     if (!eyes) return
     const s = useGame.getState()
     const now = performance.now()
@@ -94,6 +101,21 @@ export function CameraRig() {
 
     updateEdgeWarnings(camera, state.size)
 
+    // Fork-rifle in the lower right of the view, kicking back on every shot.
+    if (s.lastShot !== lastShot.current) {
+      lastShot.current = s.lastShot
+      recoil.current = 1
+    }
+    recoil.current = Math.max(0, recoil.current - dt * 8)
+    const g = rifle.current
+    if (g) {
+      _off.set(0.13, -0.26 + bob * 0.5 - recoil.current * 0.02, -0.8 + recoil.current * 0.06).applyQuaternion(camera.quaternion)
+      g.position.copy(camera.position).add(_off)
+      g.quaternion.copy(camera.quaternion)
+      g.rotateZ(0.12)
+      g.visible = !s.gameOver
+    }
+
   })
 
   if (!eyes) return null
@@ -102,6 +124,9 @@ export function CameraRig() {
       <color attach="background" args={['#05030c']} />
       <fog attach="fog" args={['#2a1a30', 14, 40]} />
       <Scenery />
+      <group ref={rifle}>
+        <Voxel pattern={character === 'pig' ? RIFLE_PIG : RIFLE_BASSIST} size={0.012} depth={3} />
+      </group>
     </>
   )
 }
