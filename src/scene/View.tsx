@@ -7,6 +7,7 @@ import { useSettings } from '../settings'
 import { RIFLE_BASSIST, RIFLE_PIG } from '../voxel/sprites.gen'
 import { Voxel } from '../voxel/Voxel'
 import { CAMERA_Z, FOV } from './PixelCanvas'
+import { Scenery } from './Scenery'
 
 export const useEyes = () => useSettings((s) => s.camera === 'eyes')
 
@@ -98,7 +99,8 @@ export function CameraRig() {
   return (
     <>
       <color attach="background" args={['#2a1a30']} />
-      <fog attach="fog" args={['#2a1a30', 12, 34]} />
+      <fog attach="fog" args={['#2a1a30', 14, 40]} />
+      <Scenery />
       <group ref={rifle}>
         <Voxel pattern={character === 'pig' ? RIFLE_PIG : RIFLE_BASSIST} size={0.012} depth={3} />
       </group>
