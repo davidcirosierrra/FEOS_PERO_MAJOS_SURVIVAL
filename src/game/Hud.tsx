@@ -30,9 +30,6 @@ export function Hud() {
       {banner && <div className="banner blink-slow">{banner}</div>}
       <SensorWarning />
 
-      <div className="hud-jump">
-        <Meter label="LOOP" readyKey="jumpReadyAt" total={JUMP_CHARGE_MS} className="jump" />
-      </div>
       <div className="hud-bottom">
         <div className="lives">
           {Array.from({ length: lives }, (_, i) => (
@@ -45,7 +42,10 @@ export function Hud() {
             <i key={i} className={i < HITS_PER_LIFE - stage ? 'on' : ''} />
           ))}
         </div>
-        <Meter label="UMB" readyKey="umbrellaReadyAt" total={UMBRELLA_COOLDOWN_MS} className="umb" />
+        <div className="meters">
+          <Meter label="UMB" readyKey="umbrellaReadyAt" total={UMBRELLA_COOLDOWN_MS} className="umb" />
+          <Meter label="LOOP" readyKey="jumpReadyAt" total={JUMP_CHARGE_MS} className="jump" />
+        </div>
         <div className="wave-n">W{wave}</div>
       </div>
     </div>
