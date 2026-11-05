@@ -7,6 +7,9 @@ import {
   LIVES,
   RESPAWN_INVULN_MS,
   BLUE_SPREAD,
+  BOSS_EVERY,
+  boss as bossCfg,
+  SCORE_PER_BOSS_HIT,
   HITS_PER_MEDAL_LOSS,
   MEDAL_SPEED_FACTOR,
   SCORE_BANANA_FULL,
@@ -29,6 +32,8 @@ export type Screen = 'home' | 'game'
 export type Enemy = { id: number; slotX: number; slotY: number; phase: number; delay: number }
 export type Shot = { id: number; x: number; y: number }
 export type FoodShot = Shot & { kind: string; speed: number }
+export type Boss = { id: number; hp: number; maxHp: number; level: number }
+export type Cookie = Shot & { vx: number; speed: number }
 export type PickupKind = 'banana' | MedalKind
 export type Pickup = Shot & { kind: PickupKind; speed: number }
 export type Explosion = { id: number; x: number; y: number; colors: string[]; big?: boolean }
@@ -63,6 +68,8 @@ type State = {
   enemyShots: FoodShot[]
   explosions: Explosion[]
   pickups: Pickup[]
+  boss: Boss | null
+  cookies: Cookie[]
   /** Medals held, in the order they were earned. */
   medals: MedalKind[]
   /** Hits taken since the last medal was lost (only counts while holding medals). */
@@ -81,7 +88,13 @@ type State = {
   removePlayerShot: (id: number) => void
   enemyFire: (x: number, y: number) => void
   removeEnemyShot: (id: number) => void
-  hitPlayer: (shotId: number) => void
+  /** Food (`enemyShots`) or a boss cookie hit the player. */
+  hitPlayer: (shotId: number, source?: 'food' | 'cookie') => void
+  hitBoss: (shotId: number, x: number, y: number) => void
+  bossFire: (x: number, y: number) => void
+  cookieFire: (x: number, y: number) => void
+  removeCookie: (id: number) => void
+  pushCookie: (cookieId: number, shotId: number) => boolean
   killEnemy: (enemyId: number, shotId: number, x: number, y: number) => void
   removeExplosion: (id: number) => void
   spawnPickup: (kind: PickupKind) => void
@@ -121,6 +134,8 @@ export const useGame = create<State>((set, get) => ({
   pickups: [],
   medals: [],
   medalHits: 0,
+  boss: null,
+  cookies: [],
 
   setScreen: (screen) => set({ screen }),
 
@@ -148,10 +163,16 @@ export const useGame = create<State>((set, get) => ({
       pickups: [],
       medals: [],
       medalHits: 0,
+      boss: null,
+      cookies: [],
     })),
 
   nextWave: () => {
     const n = get().wave + 1
+    if (n % BOSS_EVERY === 0) {
+      const hp = bossCfg(n).hp
+      return set({ wave: n, enemies: [], boss: { id: id(), hp, maxHp: hp, level: n } })
+    }
     const { count } = waveCfg(n)
     const perRow = Math.min(count, 4)
     const rows = Math.ceil(count / perRow)
@@ -243,14 +264,16 @@ export const useGame = create<State>((set, get) => ({
 
   removeEnemyShot: (sid) => set((s) => ({ enemyShots: s.enemyShots.filter((p) => p.id !== sid) })),
 
-  hitPlayer: (shotId) => {
+  hitPlayer: (shotId, source = 'food') => {
     const s = get()
-    if (!s.enemyShots.some((e) => e.id === shotId)) return
-    // Mid-loop the food just flies past underneath.
+    const list = source === 'food' ? s.enemyShots : s.cookies
+    if (!list.some((e) => e.id === shotId)) return
+    // Mid-loop everything just flies past underneath.
     if (isJumping()) return
-    const enemyShots = s.enemyShots.filter((e) => e.id !== shotId)
+    const removed =
+      source === 'food' ? { enemyShots: s.enemyShots.filter((e) => e.id !== shotId) } : { cookies: s.cookies.filter((c) => c.id !== shotId) }
     const now = performance.now()
-    if (s.gameOver || now < s.invulnUntil) return set({ enemyShots })
+    if (s.gameOver || now < s.invulnUntil) return set(removed)
 
     // Every 2 hits while holding medals, the most recently earned one is lost.
     if (s.medals.length) {
@@ -265,7 +288,7 @@ export const useGame = create<State>((set, get) => ({
     if (hits < HITS_PER_LIFE) {
       vibrate(80)
       return set({
-        enemyShots,
+        ...removed,
         stage: hits,
         invulnUntil: now + INVULN_MS,
         explosions: [...s.explosions, { id: id(), x: playerState.x, y: field.playerY, colors: ['#ff8a3d', '#ffe14d'] }],
@@ -280,12 +303,13 @@ export const useGame = create<State>((set, get) => ({
       { id: id(), x: playerState.x, y: field.playerY, colors: ['#39ff6a', '#5ef6ff', '#fff35c'], big: true },
     ]
     if (lives > 0) {
-      return set({ enemyShots: [], lives, stage: 0, invulnUntil: now + RESPAWN_INVULN_MS, explosions })
+      return set({ enemyShots: [], cookies: [], lives, stage: 0, invulnUntil: now + RESPAWN_INVULN_MS, explosions })
     }
     const newRecord = s.score > s.highScore
     if (newRecord) saveHighScore(s.score)
     set({
       enemyShots: [],
+      cookies: [],
       lives: 0,
       stage: 0,
       explosions,
@@ -293,6 +317,62 @@ export const useGame = create<State>((set, get) => ({
       newRecord,
       highScore: Math.max(s.score, s.highScore),
     })
+  },
+
+  hitBoss: (shotId, x, y) => {
+    const s = get()
+    const b = s.boss
+    if (s.gameOver || !b || b.hp <= 0 || !s.playerShots.some((p) => p.id === shotId)) return
+    const hp = b.hp - 1
+    const playerShots = s.playerShots.filter((p) => p.id !== shotId)
+    const spark = { id: id(), x, y, colors: ['#ff7eb6', '#8fd3e8', '#ffffff'] }
+    if (hp > 0) {
+      return set({ playerShots, boss: { ...b, hp }, score: s.score + SCORE_PER_BOSS_HIT * s.wave, explosions: [...s.explosions, spark] })
+    }
+    // Defeated: big multi-colour blast, bonus, clear its projectiles.
+    vibrate([60, 40, 60, 40, 200])
+    const blast = [-1.5, 0, 1.5].map((dx, i) => ({
+      id: id(),
+      x: x + dx,
+      y: y + (i === 1 ? 0.4 : 0),
+      colors: ['#ff7eb6', '#8fd3e8', '#f4f4f2', '#ffe14d', '#d9963b'],
+      big: true,
+    }))
+    const bonus = bossCfg(b.level).bonus
+    set({
+      playerShots,
+      boss: null,
+      cookies: [],
+      enemyShots: s.enemyShots.filter((e) => e.kind !== 'cone'),
+      score: s.score + SCORE_PER_BOSS_HIT * s.wave + bonus,
+      banner: `BOSS +${bonus}`,
+      explosions: [...s.explosions, ...blast],
+    })
+  },
+
+  bossFire: (x, y) => {
+    const s = get()
+    if (s.gameOver || !s.boss) return
+    set({ enemyShots: [...s.enemyShots, { id: id(), x, y, kind: 'cone', speed: bossCfg(s.boss.level).coneSpeed }] })
+  },
+
+  cookieFire: (x, y) => {
+    const s = get()
+    if (s.gameOver || !s.boss) return
+    const speed = bossCfg(s.boss.level).cookieSpeed
+    // Aim roughly at the player.
+    const vx = Math.max(-2, Math.min(2, (playerState.x - x) * 0.25))
+    set({ cookies: [...s.cookies, { id: id(), x, y, vx, speed }] })
+  },
+
+  removeCookie: (cid) => set((s) => ({ cookies: s.cookies.filter((c) => c.id !== cid) })),
+
+  /** A laser hits a cookie: the laser is used up; the cookie only gets pushed (handled in the scene). */
+  pushCookie: (cookieId, shotId) => {
+    const s = get()
+    if (s.gameOver || !s.cookies.some((c) => c.id === cookieId) || !s.playerShots.some((p) => p.id === shotId)) return false
+    set({ playerShots: s.playerShots.filter((p) => p.id !== shotId) })
+    return true
   },
 
   killEnemy: (enemyId, shotId, x, y) => {

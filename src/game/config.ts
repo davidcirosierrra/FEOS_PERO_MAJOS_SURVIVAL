@@ -69,17 +69,38 @@ export const RED_DEFLECT_DEG: [number, number] = [20, 35]
 export const BLUE_SPREAD = 0.24
 export const YELLOW_COOLDOWN_FACTOR = 0.5
 
+/** Ice-cream truck boss every 10 levels. */
+export const BOSS_EVERY = 10
+export const TRUCK_VOXEL = 0.11
+export const boss = (level: number) => {
+  const n = Math.max(1, Math.floor(level / BOSS_EVERY)) // 1st, 2nd… boss
+  return {
+    hp: 50 + 25 * (n - 1),
+    coneEvery: [Math.max(0.35, 0.9 - 0.12 * n), Math.max(0.6, 1.5 - 0.15 * n)] as [number, number], // seconds
+    cookieEvery: [Math.max(2.5, 5 - 0.5 * n), Math.max(4, 7 - 0.5 * n)] as [number, number],
+    coneSpeed: Math.min(5 + 0.6 * n, 10),
+    cookieSpeed: Math.min(2.6 + 0.3 * n, 5),
+    sway: 0.45 + 0.08 * n, // horizontal speed factor
+    bonus: 5000 * n,
+  }
+}
+export const SCORE_PER_BOSS_HIT = 10
+/** Lasers shove cookies around with this impulse. */
+export const COOKIE_PUSH = 1.6
+
 /** Collision groups. */
-const G = { player: 0, playerShot: 1, enemy: 2, enemyShot: 3, wall: 4, debris: 5, foodSolid: 6, umbrella: 7, powerup: 8 }
+const G = { player: 0, playerShot: 1, enemy: 2, enemyShot: 3, wall: 4, debris: 5, foodSolid: 6, umbrella: 7, powerup: 8, cookie: 9 }
 export const GROUPS = {
   player: interactionGroups(G.player, [G.enemyShot, G.wall, G.powerup]),
-  playerShot: interactionGroups(G.playerShot, [G.enemy, G.foodSolid]),
+  playerShot: interactionGroups(G.playerShot, [G.enemy, G.foodSolid, G.cookie]),
   enemy: interactionGroups(G.enemy, [G.playerShot]),
   enemyShot: interactionGroups(G.enemyShot, [G.player]),
-  wall: interactionGroups(G.wall, [G.player, G.debris]),
+  wall: interactionGroups(G.wall, [G.player, G.debris, G.cookie]),
   debris: interactionGroups(G.debris, [G.wall]),
   /** Solid part of thrown food: bounces off the umbrella, can be shot down. */
   foodSolid: interactionGroups(G.foodSolid, [G.umbrella, G.playerShot]),
   umbrella: interactionGroups(G.umbrella, [G.foodSolid]),
   powerup: interactionGroups(G.powerup, [G.player]),
+  /** Solid cookie body: bounces off the side walls, pushed by lasers (sensors). */
+  cookie: interactionGroups(G.cookie, [G.wall, G.playerShot]),
 }

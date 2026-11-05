@@ -3,7 +3,7 @@ import { useGame } from './store'
 
 /** Spawns waves when the screen is cleared and hides short banners (HULL +1…). */
 export function Director() {
-  const remaining = useGame((s) => s.enemies.length)
+  const remaining = useGame((s) => s.enemies.length + (s.boss ? 1 : 0))
   const wave = useGame((s) => s.wave)
   const gameOver = useGame((s) => s.gameOver)
   const banner = useGame((s) => s.banner)

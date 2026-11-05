@@ -2,6 +2,7 @@ import { useThree } from '@react-three/fiber'
 import { Physics } from '@react-three/rapier'
 import { useEffect, useRef, useState } from 'react'
 import { PickupDropper, Pickups } from '../game/Pickups'
+import { BossLayer } from '../game/Boss'
 import { Director } from '../game/Director'
 import { Enemies } from '../game/Enemy'
 import { Explosions } from '../game/Explosions'
@@ -33,6 +34,7 @@ function World() {
       <Player />
       <UmbrellaSlot />
       <Enemies />
+      <BossLayer />
       <Shots />
       <Pickups />
       <Explosions />

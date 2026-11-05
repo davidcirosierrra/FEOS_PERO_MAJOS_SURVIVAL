@@ -113,6 +113,11 @@ export const SHUTTLE_FIN: Pattern = {
 
 /** Junk food the shuttles throw at you. */
 export const FOOD: Record<string, Pattern> = {
+  /** Thrown by the ice-cream truck boss (same footprint as the burger). */
+  cone: {
+    palette: { P: '#ff7eb6', w: '#ffffff', c: '#d9963b', C: '#a8692a' },
+    rows: ['.PPPPP.', 'PPwPPPP', '.ccccc.', '..cCc..', '..cCc..', '...c...'],
+  },
   donut: {
     palette: { p: '#ff6fb5', s: '#7df9ff', t: '#ffe14d', d: '#c4733b' },
     rows: [
@@ -139,7 +144,8 @@ export const FOOD: Record<string, Pattern> = {
   },
 }
 
-export const FOOD_KINDS = Object.keys(FOOD)
+/** What regular shuttles throw (the boss has its own: `cone`). */
+export const FOOD_KINDS = ['donut', 'soda', 'fries', 'burger']
 
 export const LASER: Pattern = {
   palette: { g: '#b6ff3d', w: '#ffffff' },

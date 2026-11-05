@@ -3,7 +3,7 @@ import { sensorAlive } from '../input'
 import { PixelSprite } from '../components/PixelSprite'
 import { pad } from '../storage'
 import { ALIEN_ICON, MEDAL_KINDS, MEDALS } from '../voxel/patterns'
-import { HITS_PER_LIFE, JUMP_CHARGE_MS, UMBRELLA_COOLDOWN_MS } from './config'
+import { BOSS_EVERY, HITS_PER_LIFE, JUMP_CHARGE_MS, UMBRELLA_COOLDOWN_MS } from './config'
 import { useGame } from './store'
 
 export function Hud() {
@@ -27,10 +27,12 @@ export function Hud() {
         </div>
       </div>
 
+      <BossBar />
       {wave > 0 && (
         // Remounts on every new level so the slide-in animation replays.
         <div key={wave} className="level-title">
           LEVEL {wave}
+          {wave % BOSS_EVERY === 0 && <small>BOSS</small>}
         </div>
       )}
       {banner && <div className="banner blink-slow">{banner}</div>}
@@ -124,6 +126,20 @@ function Medals() {
       {MEDAL_KINDS.map((k) => (
         <PixelSprite key={k} pattern={MEDALS[k]} scale={1.6} className={medals.includes(k) ? 'on' : ''} />
       ))}
+    </div>
+  )
+}
+
+/** Boss health bar across the top while the ice-cream truck is around. */
+function BossBar() {
+  const boss = useGame((s) => s.boss)
+  if (!boss) return null
+  return (
+    <div className="boss-bar">
+      <span className="label">ICE CREAM TRUCK</span>
+      <span className="boss-track">
+        <i style={{ width: `${(boss.hp / boss.maxHp) * 100}%` }} />
+      </span>
     </div>
   )
 }
