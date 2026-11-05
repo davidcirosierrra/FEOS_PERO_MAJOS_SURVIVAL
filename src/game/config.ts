@@ -40,6 +40,13 @@ export const SCORE_PER_DEFLECT = 25
 export const UMBRELLA_MS = 1400
 export const UMBRELLA_COOLDOWN_MS = 2600
 
+/** Loop jump (swipe up): dodge everything while flying towards the camera. */
+export const JUMP_MS = 1100
+/** Jump meter fills in this time; starts empty and resets on every jump. */
+export const JUMP_CHARGE_MS = 10000
+/** How far the saucer flies towards the camera at the top of the loop. */
+export const JUMP_Z = 9
+
 /** Collision groups. */
 const G = { player: 0, playerShot: 1, enemy: 2, enemyShot: 3, wall: 4, debris: 5, foodSolid: 6, umbrella: 7 }
 export const GROUPS = {

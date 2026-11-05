@@ -55,7 +55,8 @@ export function Game() {
   const gameOver = useGame((s) => s.gameOver)
   const firePlayer = useGame((s) => s.firePlayer)
   const openUmbrella = useGame((s) => s.openUmbrella)
-  // Tap = fire (immediately, on touch down). Quick upward swipe = umbrella.
+  const jump = useGame((s) => s.jump)
+  // Tap = fire (immediately, on touch down). Quick swipe up = loop jump, swipe down = umbrella.
   const swipe = useRef<{ y: number; t: number } | null>(null)
 
   return (
@@ -70,15 +71,17 @@ export function Game() {
         const st = swipe.current
         if (!st) return
         if (performance.now() - st.t > SWIPE_MS) swipe.current = null
-        else if (st.y - e.clientY > SWIPE_PX) {
+        else if (Math.abs(st.y - e.clientY) > SWIPE_PX) {
+          if (st.y > e.clientY) jump()
+          else openUmbrella()
           swipe.current = null
-          openUmbrella()
         }
       }}
       onPointerUp={() => (swipe.current = null)}
       onKeyDown={(e) => {
         if (e.key === ' ') firePlayer()
-        if (e.key === 'ArrowUp' || e.key === 'w') openUmbrella()
+        if (e.key === 'ArrowUp' || e.key === 'w') jump()
+        if (e.key === 'ArrowDown' || e.key === 's') openUmbrella()
       }}
       tabIndex={0}
       ref={(el) => el?.focus()}

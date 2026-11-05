@@ -9,6 +9,8 @@ import {
   SCORE_PER_DEFLECT,
   SCORE_PER_KILL,
   STAGES,
+  JUMP_CHARGE_MS,
+  JUMP_MS,
   UMBRELLA_COOLDOWN_MS,
   UMBRELLA_MS,
   wave as waveCfg,
@@ -44,6 +46,8 @@ type State = {
   lastShot: number
   umbrellaOpen: boolean
   umbrellaReadyAt: number
+  jumpStart: number
+  jumpReadyAt: number
   enemies: Enemy[]
   playerShots: Shot[]
   enemyShots: FoodShot[]
@@ -55,6 +59,7 @@ type State = {
   clearBanner: () => void
   firePlayer: () => void
   openUmbrella: () => void
+  jump: () => void
   deflect: (shotId: number) => void
   removePlayerShot: (id: number) => void
   enemyFire: (x: number, y: number) => void
@@ -87,6 +92,8 @@ export const useGame = create<State>((set, get) => ({
   lastShot: 0,
   umbrellaOpen: false,
   umbrellaReadyAt: 0,
+  jumpStart: -Infinity,
+  jumpReadyAt: Infinity,
   enemies: [],
   playerShots: [],
   enemyShots: [],
@@ -109,6 +116,8 @@ export const useGame = create<State>((set, get) => ({
       lastShot: 0,
       umbrellaOpen: false,
       umbrellaReadyAt: 0,
+      jumpStart: -Infinity,
+      jumpReadyAt: performance.now() + JUMP_CHARGE_MS,
       enemies: [],
       playerShots: [],
       enemyShots: [],
@@ -161,6 +170,14 @@ export const useGame = create<State>((set, get) => ({
     }, UMBRELLA_MS)
   },
 
+  jump: () => {
+    const s = get()
+    const now = performance.now()
+    if (s.gameOver || s.screen !== 'game' || now < s.jumpReadyAt) return
+    vibrate(30)
+    set({ jumpStart: now, jumpReadyAt: now + JUMP_CHARGE_MS })
+  },
+
   deflect: (sid) => {
     if (!get().enemyShots.some((e) => e.id === sid)) return
     vibrate(12)
@@ -182,6 +199,8 @@ export const useGame = create<State>((set, get) => ({
   hitPlayer: (shotId) => {
     const s = get()
     if (!s.enemyShots.some((e) => e.id === shotId)) return
+    // Mid-loop the food just flies past underneath.
+    if (isJumping()) return
     const enemyShots = s.enemyShots.filter((e) => e.id !== shotId)
     const now = performance.now()
     if (s.gameOver || now < s.invulnUntil) return set({ enemyShots })
@@ -234,3 +253,5 @@ export const useGame = create<State>((set, get) => ({
 
   removeExplosion: (eid) => set((s) => ({ explosions: s.explosions.filter((e) => e.id !== eid) })),
 }))
+
+export const isJumping = (now = performance.now()) => now - useGame.getState().jumpStart < JUMP_MS

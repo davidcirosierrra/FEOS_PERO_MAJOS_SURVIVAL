@@ -6,7 +6,7 @@ import { readTilt } from '../input'
 import { CAMERA_Z } from '../scene/PixelCanvas'
 import { SAUCER_STAGES } from '../voxel/patterns'
 import { latheSize, Saucer } from '../voxel/Voxel'
-import { BASE_DAMPING, GROUPS, SAUCER_VOXEL, STAGES, THRUST } from './config'
+import { BASE_DAMPING, GROUPS, JUMP_MS, JUMP_Z, SAUCER_VOXEL, STAGES, THRUST } from './config'
 import { field, playerState, useGame } from './store'
 
 const PHYSICS_DT = 1 / 60
@@ -55,13 +55,27 @@ export function Player() {
     const vx = b.linvel().x
     const t = state.clock.elapsedTime
     // The camera looks down on the ship (~19°): tip it back so we see the side profile and dome.
-    v.rotation.x = -Math.atan2(-field.playerY, CAMERA_Z) + 0.1
+    const { invulnUntil, gameOver, jumpStart } = useGame.getState()
+    const now = performance.now()
+    const tilt = -Math.atan2(-field.playerY, CAMERA_Z) + 0.1
+    // Loop jump: arc towards the camera (looks bigger), full 360° flip, back down.
+    const k = (now - jumpStart) / JUMP_MS
+    if (k >= 0 && k < 1) {
+      const e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2 // easeInOutQuad for the flip
+      const arc = Math.sin(Math.PI * k)
+      const z = arc * JUMP_Z
+      // Undo the perspective push-out so on screen it rises straight up instead of drifting off.
+      const shrink = (CAMERA_Z - z) / CAMERA_Z
+      const screenY = field.playerY + arc * 2.8
+      v.position.set(p.x * shrink - p.x, screenY * shrink - field.playerY, z)
+      v.rotation.x = tilt - e * Math.PI * 2
+    } else {
+      v.position.set(0, Math.sin(t * 3) * 0.06, 0)
+      v.rotation.x = tilt
+    }
     v.rotation.z = -vx * 0.035
     spin.current?.rotateY(0.04 + Math.abs(vx) * 0.01)
-    v.position.y = Math.sin(t * 3) * 0.06
 
-    const { invulnUntil, gameOver } = useGame.getState()
-    const now = performance.now()
     v.visible = gameOver ? false : now > invulnUntil || Math.floor(now / 90) % 2 === 0
   })
 

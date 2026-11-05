@@ -3,7 +3,7 @@ import { sensorAlive } from '../input'
 import { PixelSprite } from '../components/PixelSprite'
 import { pad } from '../storage'
 import { ALIEN_ICON } from '../voxel/patterns'
-import { HITS_PER_LIFE, UMBRELLA_COOLDOWN_MS } from './config'
+import { HITS_PER_LIFE, JUMP_CHARGE_MS, UMBRELLA_COOLDOWN_MS } from './config'
 import { useGame } from './store'
 
 export function Hud() {
@@ -30,6 +30,9 @@ export function Hud() {
       {banner && <div className="banner blink-slow">{banner}</div>}
       <SensorWarning />
 
+      <div className="hud-jump">
+        <Meter label="LOOP" readyKey="jumpReadyAt" total={JUMP_CHARGE_MS} className="jump" />
+      </div>
       <div className="hud-bottom">
         <div className="lives">
           {Array.from({ length: lives }, (_, i) => (
@@ -42,7 +45,7 @@ export function Hud() {
             <i key={i} className={i < HITS_PER_LIFE - stage ? 'on' : ''} />
           ))}
         </div>
-        <UmbrellaMeter />
+        <Meter label="UMB" readyKey="umbrellaReadyAt" total={UMBRELLA_COOLDOWN_MS} className="umb" />
         <div className="wave-n">W{wave}</div>
       </div>
     </div>
@@ -80,27 +83,26 @@ function SensorWarning() {
   return missing ? <div className="sensor-warn blink">NO TILT SENSOR</div> : null
 }
 
-/** Umbrella cooldown: fills up, lit when ready (updated without re-rendering). */
-function UmbrellaMeter() {
+/** Cooldown bar that fills up and lights when ready (updated without re-rendering). */
+function Meter({ label, readyKey, total, className }: { label: string; readyKey: 'umbrellaReadyAt' | 'jumpReadyAt'; total: number; className: string }) {
   const bar = useRef<HTMLElement>(null)
   const box = useRef<HTMLDivElement>(null)
   useEffect(() => {
     let raf = 0
     const tick = () => {
-      const { umbrellaReadyAt } = useGame.getState()
-      const left = Math.max(0, umbrellaReadyAt - performance.now())
-      const k = 1 - Math.min(1, left / UMBRELLA_COOLDOWN_MS)
+      const left = Math.max(0, useGame.getState()[readyKey] - performance.now())
+      const k = 1 - Math.min(1, left / total)
       if (bar.current) bar.current.style.width = `${k * 100}%`
       box.current?.classList.toggle('ready', left <= 0)
       raf = requestAnimationFrame(tick)
     }
     tick()
     return () => cancelAnimationFrame(raf)
-  }, [])
+  }, [readyKey, total])
   return (
-    <div ref={box} className="umb">
-      <span className="label">UMB</span>
-      <span className="umb-track">
+    <div ref={box} className={`meter ${className}`}>
+      <span className="label">{label}</span>
+      <span className="meter-track">
         <i ref={bar} />
       </span>
     </div>

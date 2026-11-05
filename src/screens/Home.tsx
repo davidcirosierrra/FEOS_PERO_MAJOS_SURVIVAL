@@ -77,7 +77,8 @@ export function Home() {
       <div className="menu-info intro">
         <TiltMeter />
         <p>TILT TO MOVE · TAP TO FIRE</p>
-        <p>SWIPE UP: UMBRELLA</p>
+        <p>SWIPE UP: LOOP</p>
+        <p>SWIPE DOWN: UMBRELLA</p>
         <p className="dim">3 HITS = 1 LIFE</p>
       </div>
     </div>
