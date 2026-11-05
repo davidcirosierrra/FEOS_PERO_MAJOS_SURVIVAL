@@ -2,7 +2,7 @@
 
 8-bit 3D shooter PWA (React + TypeScript + three.js / react-three-fiber + Rapier physics).
 
-- Tilt the phone to move the alien saucer, tap to fire, swipe up for a loop jump (dodges everything, 10 s charge), swipe down for an umbrella that bounces the food away.
+- Tilt the phone to move the alien saucer, tap to fire, swipe up for a loop jump (dodges everything, 10 s charge), swipe down for an umbrella that bounces the food away. A glowing banana falls every 15–22 s: catch it to repair one hull point.
 - Shuttles drop junk food on you; every hit makes the saucer fatter (heavier → slower, fires slower). 3 hits = 1 life, 3 lives.
 - Hi-score in `localStorage`. No backend.
 

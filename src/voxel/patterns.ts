@@ -165,3 +165,17 @@ export const UMBRELLA: Pattern = {
     '.......kk........',
   ],
 }
+
+/** Power-up: restores one hull point. */
+export const BANANA: Pattern = {
+  palette: { y: '#ffe14d', Y: '#e0a800', b: '#6b4a1c' },
+  rows: [
+    '..........bb',
+    '.........yy.',
+    '........yyy.',
+    '.......yyyY.',
+    'byy..yyyyY..',
+    '.yyyyyyyY...',
+    '..YYYYY.....',
+  ],
+}

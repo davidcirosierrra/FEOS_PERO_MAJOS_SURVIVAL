@@ -47,10 +47,16 @@ export const JUMP_CHARGE_MS = 10000
 /** How far the saucer flies towards the camera at the top of the loop. */
 export const JUMP_Z = 9
 
+/** Banana power-up: falls every 15–22 s, slower than food; heals one hull point. */
+export const BANANA_EVERY_MS: [number, number] = [15000, 22000]
+export const BANANA_SPEED = 2.2
+/** Points when caught with the hull already intact. */
+export const SCORE_BANANA_FULL = 250
+
 /** Collision groups. */
-const G = { player: 0, playerShot: 1, enemy: 2, enemyShot: 3, wall: 4, debris: 5, foodSolid: 6, umbrella: 7 }
+const G = { player: 0, playerShot: 1, enemy: 2, enemyShot: 3, wall: 4, debris: 5, foodSolid: 6, umbrella: 7, powerup: 8 }
 export const GROUPS = {
-  player: interactionGroups(G.player, [G.enemyShot, G.wall]),
+  player: interactionGroups(G.player, [G.enemyShot, G.wall, G.powerup]),
   playerShot: interactionGroups(G.playerShot, [G.enemy]),
   enemy: interactionGroups(G.enemy, [G.playerShot]),
   enemyShot: interactionGroups(G.enemyShot, [G.player]),
@@ -59,4 +65,5 @@ export const GROUPS = {
   /** Solid part of thrown food: only bounces off the umbrella. */
   foodSolid: interactionGroups(G.foodSolid, [G.umbrella]),
   umbrella: interactionGroups(G.umbrella, [G.foodSolid]),
+  powerup: interactionGroups(G.powerup, [G.player]),
 }

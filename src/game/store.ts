@@ -6,6 +6,7 @@ import {
   INVULN_MS,
   LIVES,
   RESPAWN_INVULN_MS,
+  SCORE_BANANA_FULL,
   SCORE_PER_DEFLECT,
   SCORE_PER_KILL,
   STAGES,
@@ -52,6 +53,7 @@ type State = {
   playerShots: Shot[]
   enemyShots: FoodShot[]
   explosions: Explosion[]
+  bananas: Shot[]
 
   setScreen: (s: Screen) => void
   startGame: () => void
@@ -67,6 +69,9 @@ type State = {
   hitPlayer: (shotId: number) => void
   killEnemy: (enemyId: number, shotId: number, x: number, y: number) => void
   removeExplosion: (id: number) => void
+  spawnBanana: () => void
+  removeBanana: (id: number) => void
+  catchBanana: (id: number) => void
 }
 
 const vibrate = (p: number | number[]) => {
@@ -98,6 +103,7 @@ export const useGame = create<State>((set, get) => ({
   playerShots: [],
   enemyShots: [],
   explosions: [],
+  bananas: [],
 
   setScreen: (screen) => set({ screen }),
 
@@ -122,6 +128,7 @@ export const useGame = create<State>((set, get) => ({
       playerShots: [],
       enemyShots: [],
       explosions: [],
+      bananas: [],
     })),
 
   nextWave: () => {
@@ -249,6 +256,28 @@ export const useGame = create<State>((set, get) => ({
       score: s.score + SCORE_PER_KILL * s.wave,
       explosions: [...s.explosions, { id: id(), x, y, colors: ['#f2f2f2', '#b8bcc8', '#ff9a2e', '#ffe14d'] }],
     })
+  },
+
+  spawnBanana: () => {
+    const s = get()
+    if (s.gameOver || s.screen !== 'game') return
+    const x = (Math.random() * 2 - 1) * (field.halfW - 0.8)
+    set({ bananas: [...s.bananas, { id: id(), x, y: field.halfH + 1 }] })
+  },
+
+  removeBanana: (bid) => set((s) => ({ bananas: s.bananas.filter((b) => b.id !== bid) })),
+
+  catchBanana: (bid) => {
+    const s = get()
+    if (s.gameOver || !s.bananas.some((b) => b.id === bid)) return
+    vibrate([20, 40, 20])
+    const bananas = s.bananas.filter((b) => b.id !== bid)
+    const sparkle = { id: id(), x: playerState.x, y: field.playerY + 0.4, colors: ['#ffe14d', '#fff59d', '#ffffff'] }
+    if (s.stage > 0) {
+      set({ bananas, stage: s.stage - 1, banner: 'HULL +1', explosions: [...s.explosions, sparkle] })
+    } else {
+      set({ bananas, score: s.score + SCORE_BANANA_FULL, banner: `+${SCORE_BANANA_FULL}`, explosions: [...s.explosions, sparkle] })
+    }
   },
 
   removeExplosion: (eid) => set((s) => ({ explosions: s.explosions.filter((e) => e.id !== eid) })),
