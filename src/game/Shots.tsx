@@ -8,6 +8,7 @@ import { Voxel } from '../voxel/Voxel'
 import { FLY_Z, Stand } from '../scene/View'
 import { FOOD_VOXEL, GROUPS, PLAYER_SHOT_SPEED, RED_DEFLECT_DEG } from './config'
 import { field, useGame, type FoodShot, type Shot } from './store'
+import { useSettings } from '../settings'
 
 // Velocity props are only meant as the *initial* velocity: keep them referentially stable (and the
 // components memoised) so re-renders don't make @react-three/rapier re-apply them mid-flight.
@@ -41,13 +42,32 @@ const PlayerShot = memo(function PlayerShot({ s }: { s: Shot }) {
   )
 })
 
-const SPIN_Y_ONLY: [boolean, boolean, boolean] = [false, true, false]
-
-/** Food sprite; greys out and fades once it can't hurt you any more (shot down / deflected). */
+/**
+ * Food sprite. Spinning and tumbling are purely visual (the body never rotates): in first person
+ * the sprite is lifted off the ground inside the body, and a rotating body would swing it below
+ * the pavement. Greys out and fades once it can't hurt you any more (shot down / deflected).
+ */
 function FoodLook({ pattern, markHarmless }: { pattern: Pattern; markHarmless: { current: () => void } }) {
   const [harmless, setHarmless] = useState(false)
-  markHarmless.current = () => setHarmless(true)
-  return <Voxel pattern={harmless ? grayPattern(pattern) : pattern} size={FOOD_VOXEL} depth={3} opacity={harmless ? 0.45 : 1} />
+  const spinner = useRef<THREE.Group>(null)
+  const motion = useRef({ spin: (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 3), tumble: [0, 0, 0] })
+  markHarmless.current = () => {
+    motion.current.tumble = [0, 1, 2].map(() => (Math.random() - 0.5) * 18)
+    setHarmless(true)
+  }
+  useFrame((_, dt) => {
+    const g = spinner.current
+    if (!g) return
+    const { spin, tumble } = motion.current
+    g.rotation.x += tumble[0] * dt
+    g.rotation.y += (spin + tumble[1]) * dt
+    g.rotation.z += tumble[2] * dt
+  })
+  return (
+    <group ref={spinner}>
+      <Voxel pattern={harmless ? grayPattern(pattern) : pattern} size={FOOD_VOXEL} depth={3} opacity={harmless ? 0.45 : 1} />
+    </group>
+  )
 }
 
 /** Shot-down food falls along -z (away from the camera) at this speed and is removed past this depth. */
@@ -60,10 +80,7 @@ const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
   const remove = useGame((st) => st.removeEnemyShot)
   const pattern = THROWN[s.kind]
   const { w, h } = patternSize(pattern)
-  const { vel, angVel } = useMemo(() => {
-    const spin = (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 3)
-    return { vel: [0, -s.speed, 0] as [number, number, number], angVel: [0, spin, 0] as [number, number, number] }
-  }, [s.speed])
+  const vel = useMemo(() => [0, -s.speed, 0] as [number, number, number], [s.speed])
   const deflect = useGame((st) => st.deflect)
   const shootFood = useGame((st) => st.shootFood)
   // Turns grey/translucent once harmless. Kept in a child so the RigidBody itself never re-renders
@@ -82,8 +99,7 @@ const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
       position={[s.x, s.y, 0]}
       gravityScale={0}
       linearVelocity={vel}
-      angularVelocity={angVel}
-      enabledRotations={SPIN_Y_ONLY}
+      lockRotations
       colliders={false}
       userData={{ kind: 'enemyShot', id: s.id, deflected: false }}
       onIntersectionEnter={({ other, target }) => {
@@ -97,13 +113,13 @@ const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
         ud.deflected = ud.falling = true
         markHarmless.current()
         for (let i = 0; i < b.numColliders(); i++) b.collider(i).setCollisionGroups(0)
-        b.setEnabledRotations(true, true, true, true)
-        b.setAngvel({ x: (Math.random() - 0.5) * 16, y: (Math.random() - 0.5) * 16, z: (Math.random() - 0.5) * 16 }, true)
         const v = b.linvel()
         if (result === 'hit') {
           // Plain laser: the food tumbles away from the camera until it vanishes.
           b.setGravityScale(0, true)
-          b.setLinvel({ x: v.x * 0.3 + (Math.random() - 0.5) * 2, y: v.y * 0.3 + 1.5, z: -FALL_SPEED }, true)
+          // (first person: drops to the pavement more gently, it's right under your eyes)
+          const fall = useSettings.getState().camera === 'eyes' ? 3 : FALL_SPEED
+          b.setLinvel({ x: v.x * 0.3 + (Math.random() - 0.5) * 2, y: v.y * 0.3 + 1.5, z: -fall }, true)
           return
         }
         // Red medal: knocked straight down, and the laser carries on upwards at an angle.
@@ -129,8 +145,6 @@ const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
         b.setGravityScale(0.8, true)
         const v = b.linvel()
         b.setLinvel({ x: v.x + (b.translation().x - other.rigidBody!.translation().x) * 4 + (Math.random() - 0.5) * 3, y: Math.max(Math.abs(v.y), 6), z: 0 }, true)
-        b.setEnabledRotations(true, true, true, true)
-        b.setAngvel({ x: (Math.random() - 0.5) * 20, y: (Math.random() - 0.5) * 20, z: (Math.random() - 0.5) * 20 }, true)
         deflect(s.id)
       }}
     >
