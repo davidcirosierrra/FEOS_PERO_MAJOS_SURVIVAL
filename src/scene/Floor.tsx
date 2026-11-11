@@ -37,7 +37,7 @@ export function Floor({ speed = 2, topDown = false }: { speed?: number; topDown?
     // First person: the pavement is the ground the sprites stand on.
     <mesh position={[0, eyes ? 6 : 0, eyes ? -0.02 : Z]}>
       <planeGeometry args={[W, H]} />
-      <meshBasicMaterial map={tex} color={eyes ? '#d4d6da' : '#a9a6c0'} />
+      <meshBasicMaterial map={tex} color={eyes ? '#9a98b4' : '#a9a6c0'} />
     </mesh>
   )
 }

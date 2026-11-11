@@ -3,6 +3,8 @@ const bits = (g: number[]) => g.reduce((acc, i) => acc | (1 << i), 0)
 const interactionGroups = (member: number, filter: number[]) => ((bits([member]) << 16) | bits(filter)) >>> 0
 
 export const VOXEL = 0.15
+/** Walking pace: how fast the pavement (and everything on the street) scrolls, units/s. */
+export const FLOOR_SPEED = 2.2
 /** Player character voxel size and how much wider it gets per hit (it eats what it's hit with). */
 export const CHAR_VOXEL = 0.056
 export const STAGE_WIDTH = [1, 1.25, 1.5]

@@ -15,6 +15,7 @@ import { GameOver, Hud } from '../game/Hud'
 import { Player, Walls } from '../game/Player'
 import { Shots } from '../game/Shots'
 import { UmbrellaSlot } from '../game/Umbrella'
+import { FLOOR_SPEED } from '../game/config'
 import { field, useGame } from '../game/store'
 import { CAMERA_Z, FOV, PixelCanvas } from '../scene/PixelCanvas'
 import { Floor, LightPools } from '../scene/Floor'
@@ -105,7 +106,7 @@ export function Game() {
         <CameraRig />
         <QuipProjector />
         <Suspense fallback={null}>
-          <Floor speed={2.2} />
+          <Floor speed={FLOOR_SPEED} />
         </Suspense>
         <LightPools />
         <World />
