@@ -3,6 +3,7 @@ import { BOSSES, ENRAGE_AT } from '../bosses'
 import { bossPortrait } from '../bosses/portrait'
 import { character as characterOf } from '../characters'
 import { PixelSprite } from '../components/PixelSprite'
+import { ShareButton } from '../components/ShareButton'
 import { sensorAlive } from '../input'
 import { useSettings } from '../settings'
 import { pad } from '../storage'
@@ -154,6 +155,7 @@ export function GameOver() {
           </dd>
         </dl>
         {newRecord && <p className="record blink">ERREKOR BERRIA!</p>}
+        <ShareButton />
         <div className="buttons">
           <button className="pixel-btn" onClick={startGame}>
             BERRIRO

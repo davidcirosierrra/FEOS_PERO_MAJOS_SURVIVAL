@@ -1695,3 +1695,52 @@ body,
     height: clamp(70px, 12dvh, 110px);
   }
 }
+
+/* ---------- Share ---------- */
+.share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: min(260px, 100%);
+  color: var(--ink);
+  background: var(--yellow);
+  box-shadow:
+    0 0 0 2px var(--ink),
+    inset 0 3px 0 #fff6c0,
+    inset 0 -4px 0 #c79a2a,
+    0 6px 0 2px var(--ink);
+  animation: share-wiggle 2.6s steps(2) 1s infinite;
+}
+.share-btn:active {
+  box-shadow:
+    0 0 0 2px var(--ink),
+    inset 0 3px 0 #c79a2a,
+    0 2px 0 2px var(--ink);
+}
+.share-btn.busy {
+  opacity: 0.7;
+  animation: none;
+}
+.share-btn.shared,
+.share-btn.copied {
+  background: var(--cyan);
+  animation: hero-pop 0.25s steps(4);
+}
+.share-btn.failed {
+  background: var(--red);
+  color: #fff;
+}
+@keyframes share-wiggle {
+  0%,
+  88%,
+  100% {
+    transform: rotate(0);
+  }
+  92% {
+    transform: rotate(-2deg);
+  }
+  96% {
+    transform: rotate(2deg);
+  }
+}

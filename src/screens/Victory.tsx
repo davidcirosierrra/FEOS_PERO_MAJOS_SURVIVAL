@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { character as characterOf } from '../characters'
+import { ShareButton } from '../components/ShareButton'
 import { useGame } from '../game/store'
 import { useSettings } from '../settings'
 import { pad } from '../storage'
@@ -124,6 +125,7 @@ export function Victory() {
             PUNTUAK <b>{pad(score)}</b>
           </p>
           {newRecord && <p className="record blink">ERREKOR BERRIA!</p>}
+          <ShareButton />
           <div className="buttons">
             <button className="pixel-btn" onClick={startGame}>
               BERRIRO
