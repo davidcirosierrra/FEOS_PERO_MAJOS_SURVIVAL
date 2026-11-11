@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { sfx } from '../audio'
+import { character } from '../characters'
 import { useSettings } from '../settings'
 import { loadHighScore, saveHighScore } from '../storage'
 import { MEDAL_KINDS, type MedalKind } from '../voxel/patterns'
@@ -13,6 +14,13 @@ import {
   LIVES,
   RESPAWN_INVULN_MS,
   BLUE_SPREAD,
+  DRUM_SPREAD,
+  DUO_GAP,
+  KICK_RADIUS,
+  OIHUA_BOSS_DAMAGE,
+  PLAYER_SHOT_SPEED,
+  SOLO_EVERY,
+  SOLO_FAN,
   BOSS_EVERY,
   ENDING_MS,
   SCORE_PER_BOSS_HIT,
@@ -38,6 +46,8 @@ export type Screen = 'home' | 'game'
 /** `look` indexes FANS. */
 export type Enemy = { id: number; slotX: number; slotY: number; phase: number; delay: number; look: number }
 export type Shot = { id: number; x: number; y: number }
+/** A player's fork: straight up unless `vx`/`vy` say otherwise; `chain` = already bounced (reverb). */
+export type ForkShot = Shot & { vx?: number; vy?: number; chain?: boolean }
 /** `vx` = sideways speed (boss spreads / aimed shots); `boss` = thrown by a boss (cleared when it dies). */
 export type FoodShot = Shot & { kind: string; speed: number; vx?: number; boss?: boolean }
 /** `index` into BOSSES. */
@@ -55,6 +65,16 @@ export const field = { halfW: 4, halfH: 8, playerY: -6 }
 export const liveThreats = new Map<number, { x: number; y: number; harmless: boolean }>()
 /** Live player position, written every frame by the player body. */
 export const playerState = { x: 0 }
+/** Live fan positions, written by each fan every frame (the rasta's forks look for the next one). */
+export const liveEnemies = new Map<number, { x: number; y: number }>()
+
+/** The character being played. */
+const who = () => character(useSettings.getState().character)
+const powerOf = () => who().power?.id
+/** Hits that cost a life, for the current character. */
+export const hitsPerLife = () => who().stats?.hitsPerLife ?? HITS_PER_LIFE
+/** How fat (0..2) the character is after `stage` hits, whatever its hits per life. */
+export const fatStage = (stage: number) => Math.min(2, Math.round((stage * 2) / Math.max(1, hitsPerLife() - 1)))
 
 let nextId = 1
 const id = () => nextId++
@@ -85,7 +105,9 @@ type State = {
   jumpStart: number
   jumpReadyAt: number
   enemies: Enemy[]
-  playerShots: Shot[]
+  playerShots: ForkShot[]
+  /** Fans taken down since the last hit (the guitarist's solo). */
+  streak: number
   enemyShots: FoodShot[]
   explosions: Explosion[]
   pickups: Pickup[]
@@ -160,6 +182,7 @@ export const useGame = create<State>((set, get) => ({
   jumpReadyAt: Infinity,
   enemies: [],
   playerShots: [],
+  streak: 0,
   enemyShots: [],
   explosions: [],
   pickups: [],
@@ -195,6 +218,7 @@ export const useGame = create<State>((set, get) => ({
       jumpReadyAt: performance.now() + JUMP_CHARGE_MS,
       enemies: [],
       playerShots: [],
+      streak: 0,
       enemyShots: [],
       explosions: [],
       pickups: [],
@@ -246,15 +270,17 @@ export const useGame = create<State>((set, get) => ({
     const s = get()
     if (s.gameOver || s.paused || s.screen !== 'game') return
     const now = performance.now()
-    const cooldown = STAGES[s.stage].fireCooldown * (s.medals.includes('yellow') ? YELLOW_COOLDOWN_FACTOR : 1)
+    const me = who()
+    const power = me.power?.id
+    const cooldown =
+      STAGES[fatStage(s.stage)].fireCooldown * (s.medals.includes('yellow') ? YELLOW_COOLDOWN_FACTOR : 1) * (me.stats?.fireCooldown ?? 1)
     if (now - s.lastShot < cooldown) return
     const y = field.playerY + 0.7
-    const shots = s.medals.includes('blue')
-      ? [
-          { id: id(), x: playerState.x - BLUE_SPREAD, y },
-          { id: id(), x: playerState.x + BLUE_SPREAD, y },
-        ]
-      : [{ id: id(), x: playerState.x, y }]
+    // Lanes the forks come out of: drummer = two sticks, blue pick doubles, singers = one set each.
+    let lanes = power === 'redoble' ? [-DRUM_SPREAD, DRUM_SPREAD] : [0]
+    if (s.medals.includes('blue')) lanes = lanes.flatMap((o) => [o - BLUE_SPREAD, o + BLUE_SPREAD])
+    if (power === 'oihua') lanes = lanes.flatMap((o) => [o - DUO_GAP, o + DUO_GAP])
+    const shots = lanes.map((o) => ({ id: id(), x: playerState.x + o, y }))
     sfx.shoot(s.medals)
     set({ lastShot: now, playerShots: [...s.playerShots, ...shots] })
   },
@@ -263,6 +289,7 @@ export const useGame = create<State>((set, get) => ({
     const s = get()
     const now = performance.now()
     if (s.gameOver || s.paused || s.screen !== 'game' || now < s.umbrellaReadyAt) return
+    if (powerOf() === 'redoble') return kick()
     const run = s.runId
     vibrate(15)
     sfx.umbrella()
@@ -276,6 +303,7 @@ export const useGame = create<State>((set, get) => ({
     const s = get()
     const now = performance.now()
     if (s.gameOver || s.paused || s.screen !== 'game' || now < s.jumpReadyAt) return
+    if (powerOf() === 'oihua') return scream()
     vibrate(30)
     sfx.loop()
     set({ jumpStart: now, jumpReadyAt: now + JUMP_CHARGE_MS })
@@ -325,8 +353,10 @@ export const useGame = create<State>((set, get) => ({
     const now = performance.now()
     if (s.gameOver || s.ending || now < s.invulnUntil) return set(removed)
 
-    // Every 2 hits while holding medals, the most recently earned one is lost.
-    if (s.medals.length) {
+    set({ streak: 0 })
+    // Every 2 hits while holding medals, the most recently earned one is lost (not the wildcard's
+    // instruments: those stay until he picks another one).
+    if (s.medals.length && powerOf() !== 'komodin') {
       const medalHits = s.medalHits + 1
       if (medalHits >= HITS_PER_MEDAL_LOSS) {
         const lost = s.medals[s.medals.length - 1]
@@ -336,7 +366,7 @@ export const useGame = create<State>((set, get) => ({
     }
 
     const hits = s.stage + 1
-    if (hits < HITS_PER_LIFE) {
+    if (hits < hitsPerLife()) {
       vibrate(80)
       sfx.hurt()
       addShake(0.35)
@@ -349,7 +379,7 @@ export const useGame = create<State>((set, get) => ({
       })
     }
 
-    // Third hit: lose a life.
+    // Last hit: lose a life.
     vibrate([120, 60, 200])
     addShake(0.9)
     flash('hurt')
@@ -473,7 +503,39 @@ export const useGame = create<State>((set, get) => ({
 
   killEnemy: (enemyId, shotId, x, y) => {
     const s = get()
-    if (!s.enemies.some((e) => e.id === enemyId) || !s.playerShots.some((p) => p.id === shotId)) return
+    const shot = s.playerShots.find((p) => p.id === shotId)
+    if (!s.enemies.some((e) => e.id === enemyId) || !shot) return
+    const power = powerOf()
+    const streak = s.streak + 1
+    const extra: ForkShot[] = []
+    let banner = s.banner
+    // Guitarist: a solo every SOLO_EVERY fans in a row.
+    if (power === 'solo' && streak % SOLO_EVERY === 0) {
+      for (const deg of SOLO_FAN) {
+        const a = (deg * Math.PI) / 180
+        extra.push({ id: id(), x: playerState.x, y: field.playerY + 0.7, vx: Math.sin(a) * PLAYER_SHOT_SPEED, vy: Math.cos(a) * PLAYER_SHOT_SPEED })
+      }
+      banner = 'SOLOA!'
+      sfx.solo()
+    }
+    // Rasta: the fork bounces on to the nearest fan (once).
+    if (power === 'reverb' && !shot.chain) {
+      let best: { x: number; y: number } | null = null
+      let bestD = Infinity
+      for (const [eid, p] of liveEnemies) {
+        if (eid === enemyId) continue
+        const d = Math.hypot(p.x - x, p.y - y)
+        if (d < bestD) [best, bestD] = [p, d]
+      }
+      if (best) {
+        const dx = best.x - x
+        const dy = best.y - y
+        const len = Math.hypot(dx, dy) || 1
+        extra.push({ id: id(), x, y, vx: (dx / len) * PLAYER_SHOT_SPEED, vy: (dy / len) * PLAYER_SHOT_SPEED, chain: true })
+      }
+    }
+    // Bassist: forks go straight through.
+    const kept = power === 'grave' ? s.playerShots : s.playerShots.filter((p) => p.id !== shotId)
     vibrate(25)
     sfx.explode()
     sfx.grumble()
@@ -485,7 +547,9 @@ export const useGame = create<State>((set, get) => ({
     set({
       quips: [...s.quips.filter((q) => now - q.at < QUIP_MS), quip, pts],
       enemies: s.enemies.filter((e) => e.id !== enemyId),
-      playerShots: s.playerShots.filter((p) => p.id !== shotId),
+      playerShots: [...kept, ...extra],
+      streak,
+      banner,
       score: s.score + points,
       explosions: [...s.explosions, { id: id(), x, y, colors: ['#f2f2f2', '#b8bcc8', '#ff9a2e', '#ffe14d'] }],
     })
@@ -517,6 +581,8 @@ export const useGame = create<State>((set, get) => ({
     if (s.medals.includes(p.kind)) {
       return set({ pickups, explosions, score: s.score + SCORE_MEDAL_DUP, banner: `+${SCORE_MEDAL_DUP}` })
     }
+    // Wildcard: each pick is an instrument and he only plays one at a time.
+    if (powerOf() === 'komodin') return set({ pickups, explosions, medals: [p.kind], medalHits: 0, banner: `${INSTRUMENT[p.kind]}!` })
     set({ pickups, explosions, medals: [...s.medals, p.kind], banner: `PUA ${PICK_NAME[p.kind]}!` })
   },
 
@@ -548,6 +614,60 @@ export const QUIP_MS = 1400
 const RAIN_CHANCE = 0.35
 
 const PICK_NAME: Record<MedalKind, string> = { red: 'GORRIA', blue: 'URDINA', yellow: 'HORIA' }
+/** What each pick turns into in the wildcard's hands. */
+export const INSTRUMENT: Record<MedalKind, string> = { red: 'BAXUA', blue: 'GITARRA', yellow: 'BATERIA' }
+
+/** Drummer's bass-drum kick (instead of the umbrella): blasts away all the food close by. */
+function kick() {
+  const s = useGame.getState()
+  const now = performance.now()
+  const near = s.enemyShots.filter((e) => {
+    const p = liveThreats.get(e.id)
+    return p && Math.hypot(p.x - playerState.x, p.y - field.playerY) < KICK_RADIUS
+  })
+  vibrate([10, 30, 60])
+  sfx.kick()
+  addShake(0.55)
+  const ids = new Set(near.map((e) => e.id))
+  useGame.setState({
+    umbrellaReadyAt: now + UMBRELLA_COOLDOWN_MS,
+    enemyShots: s.enemyShots.filter((e) => !ids.has(e.id)),
+    score: s.score + SCORE_PER_DEFLECT * Math.max(1, s.wave) * near.length,
+    explosions: [
+      ...s.explosions,
+      { id: id(), x: playerState.x, y: field.playerY + 0.4, colors: ['#ff7eb6', '#ffe14d', '#ffffff'], big: true },
+      ...near.slice(0, 8).map((e) => {
+        const p = liveThreats.get(e.id)!
+        return { id: id(), x: p.x, y: p.y, colors: ['#ffffff', '#c9ccd2'] }
+      }),
+    ],
+  })
+}
+
+/** The singers' scream (instead of the jump): everything thrown at them is gone, bosses feel it. */
+function scream() {
+  const s = useGame.getState()
+  const now = performance.now()
+  vibrate([40, 30, 120])
+  sfx.scream()
+  addShake(1)
+  flash('white')
+  const pops = [...s.enemyShots, ...s.cookies]
+    .map((e) => liveThreats.get(e.id))
+    .filter((p): p is { x: number; y: number; harmless: boolean } => !!p)
+    .slice(0, 12)
+    .map((p) => ({ id: id(), x: p.x, y: p.y, colors: ['#ff7eb6', '#ffffff'] }))
+  const boss = s.boss && s.boss.hp > 1 ? { ...s.boss, hp: Math.max(1, s.boss.hp - OIHUA_BOSS_DAMAGE) } : s.boss
+  useGame.setState({
+    jumpReadyAt: now + JUMP_CHARGE_MS,
+    enemyShots: [],
+    cookies: [],
+    boss,
+    banner: 'OIHUAAA!',
+    score: s.score + SCORE_PER_DEFLECT * Math.max(1, s.wave) * pops.length,
+    explosions: [...s.explosions, { id: id(), x: playerState.x, y: field.playerY + 1, colors: ['#ff7eb6', '#5ef6ff', '#ffffff'], big: true }, ...pops],
+  })
+}
 
 const MEDAL_SPARK: Record<MedalKind, string> = { red: '#ff3d5a', blue: '#3da5ff', yellow: '#ffe14d' }
 

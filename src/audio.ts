@@ -270,6 +270,28 @@ export const sfx = {
       })
       for (let i = 0; i < 6; i++) noise(sfxBus, t + 2.1 + i * 0.09, 0.3, 0.12, 'highpass', 6000) // crowd-ish hiss
     }),
+  /** Drummer's bass-drum kick. */
+  kick: () =>
+    fx((t) => {
+      tone(sfxBus, 160, t, 0.32, 'sine', 0.55, 38)
+      tone(sfxBus, 90, t, 0.2, 'triangle', 0.3, 40)
+      noise(sfxBus, t, 0.06, 0.32, 'lowpass', 1400)
+      noise(sfxBus, t + 0.02, 0.25, 0.12, 'highpass', 5000) // cymbal tail
+    }),
+  /** The singers' scream. */
+  scream: () =>
+    fx((t) => {
+      noise(sfxBus, t, 1.0, 0.32, 'bandpass', 700, 2600)
+      tone(sfxBus, 196, t, 1.0, 'sawtooth', 0.13, 392)
+      tone(sfxBus, 294, t + 0.04, 0.95, 'square', 0.06, 587)
+      tone(sfxBus, 98, t, 0.8, 'square', 0.08, 70)
+    }),
+  /** Guitarist's solo: a quick arpeggio up the neck. */
+  solo: () =>
+    fx((t) => {
+      ;[64, 67, 71, 76, 79, 83, 88].forEach((n, i) => tone(sfxBus, midi(n), t + i * 0.045, 0.1, 'square', 0.09))
+      tone(sfxBus, midi(88), t + 0.32, 0.4, 'sawtooth', 0.06, midi(89))
+    }),
   /** Boss gets angry. */
   enrage: () =>
     fx((t) => {

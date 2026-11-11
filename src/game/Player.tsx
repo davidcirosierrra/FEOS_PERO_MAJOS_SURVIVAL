@@ -7,9 +7,9 @@ import { useSettings } from '../settings'
 import { patternSize } from '../voxel/patterns'
 import { character as characterOf } from '../characters'
 import { Walker } from '../voxel/Sprite'
-import { BASE_DAMPING, CHAR_VOXEL, GROUPS, STAGE_WIDTH, STAGES, THRUST } from './config'
+import { BASE_DAMPING, CHAR_VOXEL, DUO_GAP, GROUPS, STAGE_WIDTH, STAGES, THRUST } from './config'
 import { jumpPose } from './jump'
-import { field, playerState, useGame } from './store'
+import { fatStage, field, playerState, useGame } from './store'
 
 const PHYSICS_DT = 1 / 60
 const X_ONLY: [boolean, boolean, boolean] = [true, false, false]
@@ -19,7 +19,7 @@ export function Player() {
   const visual = useRef<THREE.Group>(null)
   const fat = useRef<THREE.Group>(null)
   const character = useSettings((s) => s.character)
-  const stage = useGame((s) => s.stage)
+  const fatness = useGame((s) => fatStage(s.stage))
   const lives = useGame((s) => s.lives)
   const hitPlayer = useGame((s) => s.hitPlayer)
 
@@ -28,11 +28,13 @@ export function Player() {
   const who = characterOf(character)
   const pattern = who.pattern
   const walkStep = useRef(0)
+  const partnerStep = useRef(0)
   const { w, h } = patternSize(pattern)
-  // Every hit makes the character fatter (wider and heavier).
-  const halfW = (w * CHAR_VOXEL * STAGE_WIDTH[stage]) / 2
+  // Every hit makes the character fatter (wider and heavier). Two singers take twice the room.
+  const gap = who.partner ? DUO_GAP : 0
+  const halfW = (w * CHAR_VOXEL * STAGE_WIDTH[fatness]) / 2 + gap
   const halfH = (h * CHAR_VOXEL) / 2
-  const { mass } = STAGES[stage]
+  const { mass } = STAGES[fatness]
 
   // Heavier ship: less damping → more inertia; with constant thrust its top speed drops too.
   useEffect(() => {
@@ -72,6 +74,7 @@ export function Player() {
     const step = Math.sin(t * 9)
     // Legs move faster the faster it runs sideways.
     walkStep.current = Math.floor((t * (9 + Math.min(6, Math.abs(vx) * 1.5))) / Math.PI) % 2
+    partnerStep.current = 1 - walkStep.current // out of step with each other
     if (pose) {
       v.position.set(pose.x, pose.y, pose.z)
       v.rotation.x = pose.flip
@@ -83,7 +86,7 @@ export function Player() {
     v.rotation.y = vx * 0.04
     // Ease into the new width after a hit / kalimotxo.
     const f = fat.current
-    if (f) f.scale.x += (STAGE_WIDTH[stage] - f.scale.x) * 0.2
+    if (f) f.scale.x += (STAGE_WIDTH[fatness] - f.scale.x) * 0.2
 
     // In first person we *are* the character: only the rifle is drawn (see CameraRig).
     v.visible = gameOver || useSettings.getState().camera === 'eyes' ? false : now > invulnUntil || Math.floor(now / 90) % 2 === 0
@@ -115,7 +118,18 @@ export function Player() {
       />
       <group ref={visual}>
         <group ref={fat}>
-          <Walker pattern={pattern} legs={who.legs} size={CHAR_VOXEL} depth={3} step={walkStep} />
+          {who.partner ? (
+            <>
+              <group position={[-gap, 0, 0]}>
+                <Walker pattern={pattern} legs={who.legs} size={CHAR_VOXEL} depth={3} step={walkStep} />
+              </group>
+              <group position={[gap, 0.06, 0]}>
+                <Walker pattern={who.partner} legs={who.legs} size={CHAR_VOXEL} depth={3} step={partnerStep} />
+              </group>
+            </>
+          ) : (
+            <Walker pattern={pattern} legs={who.legs} size={CHAR_VOXEL} depth={3} step={walkStep} />
+          )}
         </group>
       </group>
     </RigidBody>

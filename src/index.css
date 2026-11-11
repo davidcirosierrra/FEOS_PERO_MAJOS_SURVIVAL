@@ -1502,3 +1502,196 @@ body,
     inset 0 -3px 0 rgba(0, 0, 0, 0.35),
     0 4px 0 rgba(0, 0, 0, 0.45);
 }
+
+/* ---------- Home: duo hero, power line, view picker ---------- */
+.hero-figure {
+  cursor: pointer;
+}
+.hero-bodies {
+  display: flex;
+  align-items: flex-end;
+}
+.hero-figure.duo .hero-bodies svg {
+  height: clamp(74px, 13dvh, 118px);
+}
+.hero-figure.duo .hero-bodies svg + svg {
+  margin-left: -10px;
+  animation-delay: 0.45s;
+}
+.hero-figure.duo .hero-shadow {
+  width: 140px;
+}
+.hero-power {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 300px;
+  font-size: 6px;
+  line-height: 1.5;
+  color: #fff;
+  animation: hero-pop 0.25s steps(4);
+}
+.hero-power em {
+  font-style: normal;
+  flex: none;
+  padding: 3px 4px 2px;
+  color: var(--ink);
+  background: var(--yellow);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+
+.view-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  font-size: 7px;
+}
+.view-picker > .label {
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 0 var(--ink);
+}
+.view-options {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 6px;
+  background: rgba(11, 6, 16, 0.75);
+  box-shadow:
+    0 0 0 2px var(--ink),
+    inset 0 2px 0 rgba(0, 0, 0, 0.6);
+}
+/* Pink frame that slides to the chosen view. */
+.view-glider {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 6px);
+  border: 3px solid var(--pink);
+  box-shadow:
+    0 0 12px rgba(255, 126, 182, 0.55),
+    inset 0 0 8px rgba(255, 126, 182, 0.35);
+  transition: transform 0.24s steps(5);
+  pointer-events: none;
+  z-index: 1;
+}
+.view-options[data-on='eyes'] .view-glider {
+  transform: translateX(calc(100% + 6px));
+}
+.view-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: clamp(104px, 33cqw, 136px);
+  padding: 5px 5px 6px;
+  font-family: inherit;
+  font-size: 8px;
+  color: var(--dim);
+  background: linear-gradient(var(--panel), var(--panel-lo));
+  border: none;
+  box-shadow: inset 0 2px 0 var(--panel-hi);
+  cursor: pointer;
+  transition: transform 0.12s steps(3);
+}
+.view-card b {
+  font-weight: normal;
+}
+.view-card small {
+  font-size: 5px;
+  letter-spacing: 1px;
+  color: #6e6488;
+}
+.view-card.on {
+  color: #fff;
+  transform: translateY(-3px);
+}
+.view-card.on b {
+  color: var(--pink);
+}
+.view-card:not(.on) .thumb {
+  filter: saturate(0.25) brightness(0.65);
+}
+.view-card:active {
+  transform: translateY(1px);
+}
+.thumb {
+  width: 100%;
+  height: auto;
+  display: block;
+  image-rendering: pixelated;
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.thumb * {
+  transform-box: fill-box;
+}
+/* Only the chosen thumbnail moves. */
+.view-card.on .t-fans {
+  animation: t-fans 2.4s steps(12) infinite;
+}
+.view-card.on .t-floor {
+  animation: t-floor 1s steps(8) infinite;
+}
+.view-card.on .t-fork {
+  animation: t-fork 0.6s steps(6) infinite;
+}
+.view-card.on .e-lines rect {
+  animation: e-lines 0.9s steps(9) infinite;
+}
+.view-card.on .e-fan {
+  transform-origin: 50% 100%;
+  animation: e-fan 2.4s steps(12) infinite;
+}
+@keyframes t-fans {
+  to {
+    transform: translateY(10px);
+  }
+}
+@keyframes t-floor {
+  to {
+    transform: translateY(8px);
+  }
+}
+@keyframes t-fork {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-16px);
+    opacity: 0;
+  }
+}
+@keyframes e-lines {
+  from {
+    transform: translateY(14px) scaleX(0.25);
+  }
+  to {
+    transform: translateY(30px) scaleX(1);
+  }
+}
+@keyframes e-fan {
+  from {
+    transform: scale(0.6);
+  }
+  to {
+    transform: scale(2.2) translateY(2px);
+  }
+}
+
+/* Third meter for the guitarist's solo. */
+.meter.solo .meter-track i {
+  background: linear-gradient(#ffe0b0 0 35%, #ff8a1e 35%);
+  transition: width 0.15s steps(3);
+}
+
+@media (max-height: 760px) {
+  .how {
+    display: none;
+  }
+  .home .hero-figure svg {
+    height: clamp(70px, 12dvh, 110px);
+  }
+}

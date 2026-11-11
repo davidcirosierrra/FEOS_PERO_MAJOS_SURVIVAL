@@ -74,6 +74,20 @@ export const RED_DEFLECT_DEG: [number, number] = [20, 35]
 export const BLUE_SPREAD = 0.24
 export const YELLOW_COOLDOWN_FACTOR = 0.5
 
+/** Character powers (see src/characters). */
+/** Singers: distance from the middle to each singer (and their lane of forks). */
+export const DUO_GAP = 0.62
+/** Drummer: the two sticks fly this far apart. */
+export const DRUM_SPREAD = 0.16
+/** Drummer: bass-drum kick clears food within this radius. */
+export const KICK_RADIUS = 3.6
+/** Guitarist: a solo every this many kills without getting hit. */
+export const SOLO_EVERY = 10
+/** Guitarist: angles (degrees) of the forks in a solo. */
+export const SOLO_FAN = [-32, -16, 0, 16, 32]
+/** Singers' scream: damage to a boss (never the last hit). */
+export const OIHUA_BOSS_DAMAGE = 4
+
 /** A boss every 5 levels (see src/bosses); the sixth one is the last. */
 export const BOSS_EVERY = 5
 /** After the last boss blows up: time before the victory scene takes over. */

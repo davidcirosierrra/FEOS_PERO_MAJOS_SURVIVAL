@@ -1,13 +1,13 @@
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import type * as THREE from 'three'
 import { patternSize } from '../voxel/patterns'
 import { FAN_LEGS, FANS } from '../voxel/theme'
 import { Walker } from '../voxel/Sprite'
 import { Stand } from '../scene/View'
 import { FAN_VOXEL, GROUPS, wave as waveCfg } from './config'
-import { field, useGame, type Enemy as EnemyT } from './store'
+import { field, useGame, type Enemy as EnemyT, liveEnemies } from './store'
 
 const { w, h } = patternSize(FANS[0])
 const expRand = (mean: number) => -Math.log(1 - Math.random()) * mean
@@ -21,6 +21,7 @@ export function Enemy({ e }: { e: EnemyT }) {
   const fireIn = useRef(1.2 + Math.random() * 2.5)
   const walkStep = useRef(0)
   const killEnemy = useGame((s) => s.killEnemy)
+  useEffect(() => () => void liveEnemies.delete(e.id), [e.id])
 
   useFrame((_, rawDt) => {
     const b = body.current
@@ -41,6 +42,7 @@ export function Enemy({ e }: { e: EnemyT }) {
     const halfSpan = field.halfW - (w * FAN_VOXEL) / 2
     const x = Math.max(-halfSpan, Math.min(halfSpan, e.slotX + Math.sin(t.current * 1.25 + e.phase) * cfg.sway))
     b.setNextKinematicTranslation({ x, y: y.current, z: 0 })
+    liveEnemies.set(e.id, { x, y: y.current })
 
     if (visual.current) {
       // Walking wobble.

@@ -8,9 +8,9 @@ import { useSettings } from '../settings'
 import { pad } from '../storage'
 import { MEDAL_KINDS } from '../voxel/patterns'
 import { PICKS } from '../voxel/theme'
-import { BOSS_EVERY, HITS_PER_LIFE, JUMP_CHARGE_MS, UMBRELLA_COOLDOWN_MS } from './config'
+import { BOSS_EVERY, JUMP_CHARGE_MS, SOLO_EVERY, UMBRELLA_COOLDOWN_MS } from './config'
 import { fx } from './fx'
-import { useGame } from './store'
+import { hitsPerLife, useGame } from './store'
 
 /** Number that rolls up to its target instead of jumping (arcade style), leading zeros dimmed. */
 function Counter({ value }: { value: number }) {
@@ -41,6 +41,9 @@ export function Hud() {
   const banner = useGame((s) => s.banner)
   const boss = useGame((s) => s.boss != null)
   const character = useSettings((s) => s.character)
+  const who = characterOf(character)
+  const power = who.power?.id
+  const hpl = hitsPerLife()
   const beating = score > hi && hi > 0
 
   return (
@@ -65,20 +68,21 @@ export function Hud() {
         <div className="dock-row">
           <div className="lives">
             {Array.from({ length: lives }, (_, i) => (
-              <PixelSprite key={i} pattern={characterOf(character).head} scale={1.6} />
+              <PixelSprite key={i} pattern={who.head} scale={1.6} />
             ))}
           </div>
-          <div className="hull" data-left={HITS_PER_LIFE - stage}>
+          <div className="hull" data-left={hpl - stage}>
             <span className="label">TXANDA</span>
-            {Array.from({ length: HITS_PER_LIFE }, (_, i) => (
-              <i key={i} className={i < HITS_PER_LIFE - stage ? 'on' : ''} />
+            {Array.from({ length: hpl }, (_, i) => (
+              <i key={i} className={i < hpl - stage ? 'on' : ''} />
             ))}
           </div>
           <Medals />
         </div>
         <div className="meters">
-          <Meter label="ATERKIA" readyKey="umbrellaReadyAt" total={UMBRELLA_COOLDOWN_MS} className="umb" />
-          <Meter label="JAUZIA" readyKey="jumpReadyAt" total={JUMP_CHARGE_MS} className="jump" />
+          <Meter label={power === 'redoble' ? 'BONBOA' : 'ATERKIA'} readyKey="umbrellaReadyAt" total={UMBRELLA_COOLDOWN_MS} className="umb" />
+          <Meter label={power === 'oihua' ? 'OIHUA' : 'JAUZIA'} readyKey="jumpReadyAt" total={JUMP_CHARGE_MS} className="jump" />
+          {power === 'solo' && <SoloMeter />}
         </div>
       </div>
       <Flash />
@@ -193,6 +197,20 @@ function Meter({ label, readyKey, total, className }: { label: string; readyKey:
       <span className="label">{label}</span>
       <span className="meter-track">
         <i ref={bar} />
+      </span>
+    </div>
+  )
+}
+
+/** Guitarist: fans in a row towards the next solo. */
+function SoloMeter() {
+  const streak = useGame((s) => s.streak)
+  const n = streak % SOLO_EVERY
+  return (
+    <div className={`meter solo ${n === SOLO_EVERY - 1 ? 'ready' : ''}`}>
+      <span className="label">SOLOA</span>
+      <span className="meter-track">
+        <i style={{ width: `${(n / SOLO_EVERY) * 100}%` }} />
       </span>
     </div>
   )

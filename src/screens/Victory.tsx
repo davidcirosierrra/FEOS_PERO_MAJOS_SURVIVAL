@@ -74,12 +74,23 @@ export function Victory() {
             }}
           />
         ))}
-        <img
-          className="win-hero"
-          src={patternDataURL(who.pattern)}
-          alt={who.name}
-          style={{ width: `calc(var(--u) * ${hero.w * 0.8})`, left: `calc(var(--u) * 31)`, bottom: `calc(var(--u) * ${14 + 16})` }}
-        />
+        {[who.pattern, who.partner].map(
+          (p, i) =>
+            p && (
+              <img
+                key={i}
+                className="win-hero"
+                src={patternDataURL(p)}
+                alt={i ? '' : who.name}
+                style={{
+                  width: `calc(var(--u) * ${hero.w * 0.8})`,
+                  left: `calc(var(--u) * ${who.partner ? 24 + i * 72 : 31})`,
+                  bottom: `calc(var(--u) * ${14 + 16})`,
+                  animationDelay: `2s, ${2 + i * 0.27}s`,
+                }}
+              />
+            ),
+        )}
         <div className="win-crowd">
           {crowd.map((f, i) => (
             <span key={i} className={f.back ? 'back' : ''} style={{ left: `calc(var(--u) * ${f.x})`, animationDelay: `${f.delay}s` }}>
