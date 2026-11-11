@@ -4,23 +4,42 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { grayPattern, patternSize, type Pattern } from '../voxel/patterns'
 import { FORK, THROWN } from '../voxel/theme'
+import { Shadow } from '../voxel/Sprite'
 import { Voxel } from '../voxel/Voxel'
 import { FLY_Z, Stand } from '../scene/View'
 import { FOOD_VOXEL, GROUPS, PLAYER_SHOT_SPEED, RED_DEFLECT_DEG } from './config'
-import { field, liveThreats, useGame, type FoodShot, type Shot } from './store'
+import { field, liveThreats, useGame, type FoodShot, type ForkShot } from './store'
 import { useSettings } from '../settings'
 
 // Velocity props are only meant as the *initial* velocity: keep them referentially stable (and the
 // components memoised) so re-renders don't make @react-three/rapier re-apply them mid-flight.
-const PLAYER_SHOT_VEL: [number, number, number] = [0, PLAYER_SHOT_SPEED, 0]
 
-const PlayerShot = memo(function PlayerShot({ s }: { s: Shot }) {
+/** Vertical fade used as the fork's trail (pink at the head, nothing at the tail). */
+const TRAIL = (() => {
+  const c = document.createElement('canvas')
+  c.width = 2
+  c.height = 16
+  const g = c.getContext('2d')!
+  const grd = g.createLinearGradient(0, 0, 0, 16)
+  grd.addColorStop(0, 'rgba(255,170,215,0.9)')
+  grd.addColorStop(1, 'rgba(255,126,182,0)')
+  g.fillStyle = grd
+  g.fillRect(0, 0, 2, 16)
+  const t = new THREE.CanvasTexture(c)
+  t.magFilter = t.minFilter = THREE.NearestFilter
+  return t
+})()
+
+const PlayerShot = memo(function PlayerShot({ s }: { s: ForkShot }) {
   const body = useRef<RapierRigidBody>(null)
   const remove = useGame((st) => st.removePlayerShot)
+  const vel = useMemo(() => [s.vx ?? 0, s.vy ?? PLAYER_SHOT_SPEED, 0] as [number, number, number], [s.vx, s.vy])
+  // Angled forks (solo, reverb) point where they fly.
+  const tilt = -Math.atan2(vel[0], vel[1])
   useFrame(() => {
     const b = body.current
     const p = b?.translation()
-    if (p && (p.y > field.halfH + 1 || Math.abs(p.x) > field.halfW + 1)) remove(s.id)
+    if (p && (Math.abs(p.y) > field.halfH + 1.5 || Math.abs(p.x) > field.halfW + 1)) remove(s.id)
   })
   return (
     <RigidBody
@@ -28,7 +47,7 @@ const PlayerShot = memo(function PlayerShot({ s }: { s: Shot }) {
       type="dynamic"
       position={[s.x, s.y, 0]}
       gravityScale={0}
-      linearVelocity={PLAYER_SHOT_VEL}
+      linearVelocity={vel}
       lockRotations
       colliders={false}
       ccd
@@ -36,7 +55,15 @@ const PlayerShot = memo(function PlayerShot({ s }: { s: Shot }) {
     >
       <CuboidCollider args={[0.1, 0.25, 0.3]} sensor mass={0.05} collisionGroups={GROUPS.playerShot} />
       <Stand height={0.5} lift={FLY_Z + 0.1}>
+        <group rotation={[0, 0, tilt]}>
         <Voxel pattern={FORK} size={0.075} depth={1} basic />
+        {/* Speed streak + glow: forks should feel fast. */}
+        <mesh position={[0, -0.75, -0.05]}>
+          <planeGeometry args={[0.16, 1]} />
+          <meshBasicMaterial map={TRAIL} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+        </mesh>
+        <Shadow pattern={FORK} size={0.075} offset={0.12} />
+        </group>
       </Stand>
     </RigidBody>
   )
@@ -80,7 +107,7 @@ const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
   const remove = useGame((st) => st.removeEnemyShot)
   const pattern = THROWN[s.kind]
   const { w, h } = patternSize(pattern)
-  const vel = useMemo(() => [0, -s.speed, 0] as [number, number, number], [s.speed])
+  const vel = useMemo(() => [s.vx ?? 0, -s.speed, 0] as [number, number, number], [s.vx, s.speed])
   const deflect = useGame((st) => st.deflect)
   const shootFood = useGame((st) => st.shootFood)
   // Turns grey/translucent once harmless. Kept in a child so the RigidBody itself never re-renders
@@ -168,6 +195,7 @@ const EnemyShot = memo(function EnemyShot({ s }: { s: FoodShot }) {
       />
       <Stand height={h * FOOD_VOXEL} lift={FLY_Z}>
         <FoodLook pattern={pattern} markHarmless={markHarmless} />
+        <Shadow pattern={pattern} size={FOOD_VOXEL} offset={0.3} />
       </Stand>
     </RigidBody>
   )

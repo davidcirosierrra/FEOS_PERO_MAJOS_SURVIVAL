@@ -3,6 +3,8 @@ const bits = (g: number[]) => g.reduce((acc, i) => acc | (1 << i), 0)
 const interactionGroups = (member: number, filter: number[]) => ((bits([member]) << 16) | bits(filter)) >>> 0
 
 export const VOXEL = 0.15
+/** Walking pace: how fast the pavement (and everything on the street) scrolls, units/s. */
+export const FLOOR_SPEED = 2.2
 /** Player character voxel size and how much wider it gets per hit (it eats what it's hit with). */
 export const CHAR_VOXEL = 0.056
 export const STAGE_WIDTH = [1, 1.25, 1.5]
@@ -26,13 +28,14 @@ export const PLAYER_SHOT_SPEED = 17
 export const INVULN_MS = 1200
 export const RESPAWN_INVULN_MS = 2200
 
+/** Regular levels. Tuned so that all 30 levels (6 bosses) can be beaten in one run. */
 export const wave = (n: number) => ({
-  count: Math.min(3 + n, 12),
-  fireRate: 0.22 + 0.06 * n, // shots per second per shuttle
-  shotSpeed: Math.min(4 + 0.45 * n, 10),
-  descent: Math.min(0.08 + 0.025 * n, 0.4), // units/s the formation creeps down
+  count: Math.min(3 + Math.ceil(n * 0.55), 12),
+  fireRate: Math.min(0.22 + 0.035 * n, 1.1), // shots per second per fan
+  shotSpeed: Math.min(4 + 0.25 * n, 9.5),
+  descent: Math.min(0.08 + 0.014 * n, 0.4), // units/s the formation creeps down
   sway: 0.6 + 0.08 * Math.min(n, 8),
-  maxEnemyShots: 6 + n * 2,
+  maxEnemyShots: Math.min(6 + Math.round(n * 1.5), 36),
 })
 
 export const SCORE_PER_KILL = 100
@@ -71,23 +74,26 @@ export const RED_DEFLECT_DEG: [number, number] = [20, 35]
 export const BLUE_SPREAD = 0.24
 export const YELLOW_COOLDOWN_FACTOR = 0.5
 
-/** Ice-cream truck boss every 10 levels. */
-export const BOSS_EVERY = 10
-export const TRUCK_VOXEL = 0.1
-export const boss = (level: number) => {
-  const n = Math.max(1, Math.floor(level / BOSS_EVERY)) // 1st, 2nd… boss
-  return {
-    hp: 50 + 25 * (n - 1),
-    coneEvery: [Math.max(0.35, 0.9 - 0.12 * n), Math.max(0.6, 1.5 - 0.15 * n)] as [number, number], // seconds
-    cookieEvery: [Math.max(2.5, 5 - 0.5 * n), Math.max(4, 7 - 0.5 * n)] as [number, number],
-    coneSpeed: Math.min(5 + 0.6 * n, 10),
-    cookieSpeed: Math.min(2.6 + 0.3 * n, 5),
-    sway: 0.45 + 0.08 * n, // horizontal speed factor
-    bonus: 5000 * n,
-  }
-}
+/** Character powers (see src/characters). */
+/** Singers: distance from the middle to each singer (and their lane of forks). */
+export const DUO_GAP = 0.62
+/** Drummer: the two sticks fly this far apart. */
+export const DRUM_SPREAD = 0.16
+/** Drummer: bass-drum kick clears food within this radius. */
+export const KICK_RADIUS = 3.6
+/** Guitarist: a solo every this many kills without getting hit. */
+export const SOLO_EVERY = 10
+/** Guitarist: angles (degrees) of the forks in a solo. */
+export const SOLO_FAN = [-32, -16, 0, 16, 32]
+/** Singers' scream: damage to a boss (never the last hit). */
+export const OIHUA_BOSS_DAMAGE = 4
+
+/** A boss every 5 levels (see src/bosses); the sixth one is the last. */
+export const BOSS_EVERY = 5
+/** After the last boss blows up: time before the victory scene takes over. */
+export const ENDING_MS = 3200
 export const SCORE_PER_BOSS_HIT = 10
-/** Lasers shove cookies around with this impulse. */
+/** Forks shove the bosses' heavy projectiles around with this impulse. */
 export const COOKIE_PUSH = 1.6
 
 /** Collision groups. */

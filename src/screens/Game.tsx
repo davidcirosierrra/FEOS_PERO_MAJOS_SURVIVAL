@@ -15,10 +15,12 @@ import { GameOver, Hud } from '../game/Hud'
 import { Player, Walls } from '../game/Player'
 import { Shots } from '../game/Shots'
 import { UmbrellaSlot } from '../game/Umbrella'
+import { FLOOR_SPEED } from '../game/config'
 import { field, useGame } from '../game/store'
 import { CAMERA_Z, FOV, PixelCanvas } from '../scene/PixelCanvas'
-import { Floor } from '../scene/Floor'
+import { Floor, LightPools } from '../scene/Floor'
 import { CameraRig } from '../scene/View'
+import { Victory } from './Victory'
 
 /** Derives the playfield size from the visible area at z = 0. */
 function useField() {
@@ -64,6 +66,7 @@ const SWIPE_MS = 450
 
 export function Game() {
   const gameOver = useGame((s) => s.gameOver)
+  const won = useGame((s) => s.won)
   const paused = useGame((s) => s.paused)
   const setPaused = useGame((s) => s.setPaused)
   const firePlayer = useGame((s) => s.firePlayer)
@@ -103,10 +106,12 @@ export function Game() {
         <CameraRig />
         <QuipProjector />
         <Suspense fallback={null}>
-          <Floor speed={2.2} />
+          <Floor speed={FLOOR_SPEED} />
         </Suspense>
+        <LightPools />
         <World />
       </PixelCanvas>
+      <div className="vignette" />
       <Rain />
       <Quips />
       <FirstPersonHands />
@@ -116,7 +121,8 @@ export function Game() {
       <PickupDropper />
       {!gameOver && <ConfigButton />}
       {paused && <ConfigPanel onClose={() => setPaused(false)} title="PAUSAN" />}
-      {gameOver && <GameOver />}
+      {gameOver && !won && <GameOver />}
+      {won && <Victory />}
     </div>
   )
 }

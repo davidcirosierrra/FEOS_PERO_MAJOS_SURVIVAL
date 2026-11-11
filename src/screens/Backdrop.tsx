@@ -1,14 +1,16 @@
 import { useFrame } from '@react-three/fiber'
 import { Suspense, useMemo, useRef } from 'react'
 import type * as THREE from 'three'
-import { Floor } from '../scene/Floor'
+import { Floor, LightPools } from '../scene/Floor'
 import { PixelCanvas } from '../scene/PixelCanvas'
-import { FAN_THROWS, FANS, THROWN } from '../voxel/theme'
+import { FAN_LEGS, FAN_THROWS, FANS, THROWN } from '../voxel/theme'
+import { Shadow, Walker } from '../voxel/Sprite'
 import { Voxel } from '../voxel/Voxel'
 
 /** Fans wandering across the pavement on a loop. */
 function Crowd() {
   const refs = useRef<(THREE.Group | null)[]>([])
+  const steps = useMemo(() => Array.from({ length: 5 }, () => ({ current: 0 })), [])
   const fans = useMemo(
     () =>
       Array.from({ length: 5 }, (_, i) => ({
@@ -28,13 +30,14 @@ function Crowd() {
       const span = 24
       const x = (((t * f.speed + f.off) % span) - span / 2) * f.dir
       const step = Math.sin(t * 8 + i)
+      steps[i].current = Math.floor((t * 8 + i) / Math.PI) & 1
       g.position.set(x, f.y + Math.abs(step) * 0.1, -1)
       g.rotation.z = step * 0.08
     })
   })
   return fans.map((f, i) => (
     <group key={i} ref={(g) => (refs.current[i] = g)}>
-      <Voxel pattern={FANS[f.look]} size={0.12} depth={3} />
+      <Walker pattern={FANS[f.look]} legs={FAN_LEGS} size={0.12} depth={3} step={steps[i]} />
     </group>
   ))
 }
@@ -67,6 +70,7 @@ function Flying() {
   return items.map((it, i) => (
     <group key={i} ref={(g) => (refs.current[i] = g)}>
       <Voxel pattern={THROWN[it.kind]} size={0.14} depth={3} />
+      <Shadow pattern={THROWN[it.kind]} size={0.14} offset={0.5} />
     </group>
   ))
 }
@@ -77,6 +81,7 @@ export function Backdrop() {
       <Suspense fallback={null}>
         <Floor speed={1} topDown />
       </Suspense>
+      <LightPools />
       <Crowd />
       <Flying />
     </PixelCanvas>

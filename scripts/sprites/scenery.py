@@ -13,40 +13,69 @@ def text(S, x, y, s, c):
                 if v=='#': S.px(x+i, y+j, c)
         x += 4
 
-# ---------------------------------------------------------------- street wall (two buildings)
+# ---------------------------------------------------------------- street wall (four old-town buildings)
+from kit import text as ktext
 wp = {
  's':'#8c8f96','S':'#6c6f76','t':'#a3a6ac',                 # stone base
- 'o':'#d9a85a','O':'#b88a40','b':'#8ab8d0','B':'#6a98b0','p':'#e8b0b8','P':'#c8909a',  # plaster colours
- 'k':'#1e2228','g':'#3a5868','G':'#6a90a8','w':'#f4f4f2','W':'#c9ccd2',
- 'r':'#151518','d':'#6b3b1e','D':'#4a2812','y':'#ffd23d',
- 'x':'#ff7eb6','v':'#9b4f9e','n':'#2a1a30',
+ 'o':'#d9a85a','O':'#b88a40','b':'#8ab8d0','B':'#6a98b0','p':'#e8b0b8','P':'#c8909a','e':'#a8c49a','E':'#86a478',  # plaster colours
+ 'k':'#1e2228','g':'#2a3e4e','G':'#5a8098','w':'#f4f4f2','W':'#c9ccd2',
+ 'r':'#151518','d':'#6b3b1e','D':'#4a2812','y':'#ffd23d','Y':'#ffb84a','c':'#fff3c4',
+ 'x':'#ff7eb6','v':'#9b4f9e','n':'#2a1a30','f':'#3fae4f','F':'#e0283c','q':'#17402a','Q':'#2e8b57','z':'#5ef6ff',
 }
-W = Sprite(96, 64, wp)
-def building(x0, col, shade, poster):
-    W.rect(x0,0,x0+47,63,col); W.rect(x0+46,0,x0+47,63,shade)
-    W.rect(x0,0,x0+47,1,'W')                                   # cornice
+BW = 48
+W = Sprite(BW*4, 64, wp)
+def building(i, col, shade, ground, lit):
+    x0 = i*BW
+    W.rect(x0,0,x0+BW-1,63,col); W.rect(x0+BW-3,0,x0+BW-2,63,shade)
+    for y in range(3, 46, 7):                                   # weathering
+        W.rect(x0+2+(y*5)%30, y, x0+5+(y*5)%30, y, shade)
+    W.rect(x0,0,x0+BW-1,1,'W'); W.rect(x0,2,x0+BW-1,2,shade)   # cornice
+    n = 0
     for wx in (x0+8, x0+28):
         for wy in (6, 26):
+            on = n in lit; n += 1
             W.rect(wx-1,wy-1,wx+10,wy+13,'W')                    # stone frame
-            W.rect(wx,wy,wx+9,wy+12,'g'); W.rect(wx+4,wy,wx+5,wy+12,'k'); W.rect(wx,wy+6,wx+9,wy+6,'k')
-            W.px(wx+1,wy+1,'G'); W.px(wx+6,wy+1,'G')
+            W.rect(wx,wy,wx+9,wy+12,'Y' if on else 'g')
+            if on:
+                W.rect(wx,wy,wx+1,wy+12,'c'); W.rect(wx+8,wy,wx+9,wy+12,'c'); W.rect(wx+2,wy,wx+7,wy+2,'y')   # curtains + lamp glow
+            else:
+                W.px(wx+1,wy+1,'G'); W.px(wx+6,wy+1,'G'); W.px(wx+2,wy+2,'G')
+            W.rect(wx+4,wy,wx+5,wy+12,'k'); W.rect(wx,wy+6,wx+9,wy+6,'k')
             W.rect(wx-2,wy+13,wx+11,wy+13,'r')                   # iron balcony
             for bx in range(wx-2,wx+12,2): W.rect(bx,wy+10,bx,wy+13,'r')
             W.rect(wx-2,wy+10,wx+11,wy+10,'r')
-    W.rect(x0,46,x0+47,63,'s')                                 # stone ground floor
+            if (n + i) % 2: W.rect(wx-1,wy+8,wx+1,wy+9,'f'); W.px(wx,wy+7,'F'); W.rect(wx+8,wy+8,wx+10,wy+9,'f'); W.px(wx+9,wy+7,'x')   # geraniums
+    W.rect(x0,46,x0+BW-1,63,'s')                               # stone ground floor
     for y in range(46,64):
-        for x in range(x0,x0+48):
+        for x in range(x0,x0+BW):
             if y%5==0 or (x+(y//5)*4)%9==0: W.px(x,y,'S')
             elif (x*3+y)%13==0: W.px(x,y,'t')
-    W.rect(x0+6,49,x0+15,63,'d'); W.rect(x0+15,49,x0+15,63,'D'); W.px(x0+13,56,'y')   # door
-    if poster:                                                  # band poster
-        W.rect(x0+24,50,x0+40,60,'n'); W.rect(x0+25,51,x0+39,59,'v')
-        text(W, x0+26, 52, 'FPM', 'x')
-        W.rect(x0+26,58,x0+38,58,'x')
-    else:
-        W.rect(x0+24,49,x0+40,63,'k'); W.rect(x0+25,50,x0+39,62,'g'); W.rect(x0+32,50,x0+32,62,'k')  # shop window
-W.rect(0,0,95,63,'o')
-building(0,'o','O',True); building(48,'b','B',False)
+    W.rect(x0+BW-1,0,x0+BW-1,63,'S'); W.px(x0+BW-1,20,'r'); W.px(x0+BW-1,44,'r')   # drainpipe
+    W.rect(x0+6,49,x0+15,63,'d'); W.rect(x0+15,49,x0+15,63,'D'); W.rect(x0+10,49,x0+10,63,'D'); W.px(x0+13,56,'y')   # door
+    W.rect(x0+5,48,x0+16,48,'W')
+    if ground == 'poster':                                      # band posters
+        W.rect(x0+24,50,x0+40,60,'n'); W.rect(x0+25,51,x0+39,59,'v'); text(W, x0+26, 52, 'FPM', 'x'); W.rect(x0+26,58,x0+38,58,'x')
+        W.rect(x0+19,52,x0+22,58,'w'); W.rect(x0+20,53,x0+21,54,'F')
+    elif ground == 'shop':
+        W.rect(x0+24,49,x0+40,63,'k'); W.rect(x0+25,50,x0+39,62,'g'); W.rect(x0+32,50,x0+32,62,'k'); W.px(x0+26,51,'G'); W.px(x0+27,52,'G')
+    elif ground == 'bar':                                       # tavern: green wood, lit window, sign
+        W.rect(x0+20,46,x0+44,48,'q')
+        W.rect(x0+17,39,x0+47,46,'q'); W.rect(x0+17,39,x0+47,39,'Q'); ktext(W, x0+19, 41, 'TABERNA', 'y')
+        W.rect(x0+22,49,x0+42,63,'q'); W.rect(x0+23,50,x0+41,59,'Y'); W.rect(x0+23,50,x0+41,51,'y'); W.rect(x0+32,50,x0+32,59,'q')
+        for bx,c in ((25,'f'),(27,'F'),(29,'d'),(35,'F'),(37,'f'),(39,'d')): W.rect(x0+bx,54,x0+bx,57,c); W.px(x0+bx,53,'k')
+        W.rect(x0+23,58,x0+41,58,'d')
+    elif ground == 'records':                                   # record shop with a neon sign
+        W.rect(x0+20,41,x0+44,46,'n'); ktext(W, x0+22, 41, 'DISKO', 'z'); W.rect(x0+21,47,x0+43,47,'x')
+        W.rect(x0+22,49,x0+42,63,'k'); W.rect(x0+23,50,x0+41,61,'g')
+        for cx in (27, 33, 39):
+            for dy in range(-2,3):
+                for dx in range(-2,3):
+                    if abs(dx)+abs(dy) <= 3: W.px(x0+cx+dx, 55+dy, 'r')
+            W.px(x0+cx,55,'x' if cx != 33 else 'y')
+building(0,'o','O','poster',{1})
+building(1,'b','B','bar',{0,3})
+building(2,'p','P','shop',{2})
+building(3,'e','E','records',{0,1})
 
 # ---------------------------------------------------------------- concert stage (backdrop)
 sp = {

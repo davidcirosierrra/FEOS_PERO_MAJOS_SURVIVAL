@@ -1,17 +1,28 @@
 import { create } from 'zustand'
 import { sfx } from '../audio'
+import { character } from '../characters'
 import { useSettings } from '../settings'
 import { loadHighScore, saveHighScore } from '../storage'
 import { MEDAL_KINDS, type MedalKind } from '../voxel/patterns'
 import { FAN_THROWS, FANS } from '../voxel/theme'
+import { BOSSES } from '../bosses'
+import { addShake, flash } from './fx'
+import { loadProgress, saveProgress } from '../storage'
 import {
   HITS_PER_LIFE,
   INVULN_MS,
   LIVES,
   RESPAWN_INVULN_MS,
   BLUE_SPREAD,
+  DRUM_SPREAD,
+  DUO_GAP,
+  KICK_RADIUS,
+  OIHUA_BOSS_DAMAGE,
+  PLAYER_SHOT_SPEED,
+  SOLO_EVERY,
+  SOLO_FAN,
   BOSS_EVERY,
-  boss as bossCfg,
+  ENDING_MS,
   SCORE_PER_BOSS_HIT,
   HITS_PER_MEDAL_LOSS,
   MEDAL_SPEED_FACTOR,
@@ -35,8 +46,14 @@ export type Screen = 'home' | 'game'
 /** `look` indexes FANS. */
 export type Enemy = { id: number; slotX: number; slotY: number; phase: number; delay: number; look: number }
 export type Shot = { id: number; x: number; y: number }
-export type FoodShot = Shot & { kind: string; speed: number }
-export type Boss = { id: number; hp: number; maxHp: number; level: number }
+/** A player's fork: straight up unless `vx`/`vy` say otherwise; `chain` = already bounced (reverb). */
+export type ForkShot = Shot & { vx?: number; vy?: number; chain?: boolean }
+/** `vx` = sideways speed (boss spreads / aimed shots); `boss` = thrown by a boss (cleared when it dies). */
+export type FoodShot = Shot & { kind: string; speed: number; vx?: number; boss?: boolean }
+/** `index` into BOSSES. */
+export type Boss = { id: number; hp: number; maxHp: number; level: number; index: number }
+/** Floating text over the playfield: fans' complaints and score pop-ups. */
+export type Floater = { id: number; x: number; y: number; text: string; at: number; kind: 'quip' | 'score' }
 export type Cookie = Shot & { vx: number; speed: number }
 export type PickupKind = 'banana' | MedalKind
 export type Pickup = Shot & { kind: PickupKind; speed: number }
@@ -48,6 +65,16 @@ export const field = { halfW: 4, halfH: 8, playerY: -6 }
 export const liveThreats = new Map<number, { x: number; y: number; harmless: boolean }>()
 /** Live player position, written every frame by the player body. */
 export const playerState = { x: 0 }
+/** Live fan positions, written by each fan every frame (the rasta's forks look for the next one). */
+export const liveEnemies = new Map<number, { x: number; y: number }>()
+
+/** The character being played. */
+const who = () => character(useSettings.getState().character)
+const powerOf = () => who().power?.id
+/** Hits that cost a life, for the current character. */
+export const hitsPerLife = () => who().stats?.hitsPerLife ?? HITS_PER_LIFE
+/** How fat (0..2) the character is after `stage` hits, whatever its hits per life. */
+export const fatStage = (stage: number) => Math.min(2, Math.round((stage * 2) / Math.max(1, hitsPerLife() - 1)))
 
 let nextId = 1
 const id = () => nextId++
@@ -61,6 +88,12 @@ type State = {
   wave: number
   runId: number
   gameOver: boolean
+  /** Last boss beaten, victory scene about to start: nothing can hurt you any more. */
+  ending: boolean
+  /** The whole game has been beaten (set together with `gameOver`). */
+  won: boolean
+  /** How many bosses have ever been beaten (home-screen gallery). */
+  bestBoss: number
   /** Config menu open mid-game. */
   paused: boolean
   newRecord: boolean
@@ -72,12 +105,14 @@ type State = {
   jumpStart: number
   jumpReadyAt: number
   enemies: Enemy[]
-  playerShots: Shot[]
+  playerShots: ForkShot[]
+  /** Fans taken down since the last hit (the guitarist's solo). */
+  streak: number
   enemyShots: FoodShot[]
   explosions: Explosion[]
   pickups: Pickup[]
   /** Speech bubbles (insults / complaints) from fans that get hit. */
-  quips: { id: number; x: number; y: number; text: string; at: number }[]
+  quips: Floater[]
   /** Random weather, rolled on every new level. */
   raining: boolean
   boss: Boss | null
@@ -104,7 +139,7 @@ type State = {
   /** Food (`enemyShots`) or a boss cookie hit the player. */
   hitPlayer: (shotId: number, source?: 'food' | 'cookie') => void
   hitBoss: (shotId: number, x: number, y: number) => void
-  bossFire: (x: number, y: number) => void
+  bossFire: (shots: { x: number; y: number; vx?: number }[]) => void
   cookieFire: (x: number, y: number) => void
   removeCookie: (id: number) => void
   pushCookie: (cookieId: number, shotId: number) => boolean
@@ -133,6 +168,9 @@ export const useGame = create<State>((set, get) => ({
   wave: 0,
   runId: 0,
   gameOver: false,
+  ending: false,
+  won: false,
+  bestBoss: loadProgress(),
   paused: false,
   newRecord: false,
   banner: null,
@@ -144,6 +182,7 @@ export const useGame = create<State>((set, get) => ({
   jumpReadyAt: Infinity,
   enemies: [],
   playerShots: [],
+  streak: 0,
   enemyShots: [],
   explosions: [],
   pickups: [],
@@ -166,6 +205,8 @@ export const useGame = create<State>((set, get) => ({
       wave: 0,
       runId: s.runId + 1,
       gameOver: false,
+      ending: false,
+      won: false,
       paused: false,
       newRecord: false,
       banner: null,
@@ -177,6 +218,7 @@ export const useGame = create<State>((set, get) => ({
       jumpReadyAt: performance.now() + JUMP_CHARGE_MS,
       enemies: [],
       playerShots: [],
+      streak: 0,
       enemyShots: [],
       explosions: [],
       pickups: [],
@@ -193,9 +235,10 @@ export const useGame = create<State>((set, get) => ({
     // Bilbao weather: some levels it just starts raining (never on the very first one).
     set({ raining: n > 1 && Math.random() < RAIN_CHANCE })
     if (n % BOSS_EVERY === 0) {
-      const hp = bossCfg(n).hp
+      const index = Math.min(n / BOSS_EVERY - 1, BOSSES.length - 1)
+      const hp = BOSSES[index].hp
       sfx.bossArrive()
-      return set({ wave: n, enemies: [], boss: { id: id(), hp, maxHp: hp, level: n } })
+      return set({ wave: n, enemies: [], boss: { id: id(), hp, maxHp: hp, level: n, index } })
     }
     const { count } = waveCfg(n)
     const perRow = Math.min(count, 4)
@@ -227,15 +270,17 @@ export const useGame = create<State>((set, get) => ({
     const s = get()
     if (s.gameOver || s.paused || s.screen !== 'game') return
     const now = performance.now()
-    const cooldown = STAGES[s.stage].fireCooldown * (s.medals.includes('yellow') ? YELLOW_COOLDOWN_FACTOR : 1)
+    const me = who()
+    const power = me.power?.id
+    const cooldown =
+      STAGES[fatStage(s.stage)].fireCooldown * (s.medals.includes('yellow') ? YELLOW_COOLDOWN_FACTOR : 1) * (me.stats?.fireCooldown ?? 1)
     if (now - s.lastShot < cooldown) return
     const y = field.playerY + 0.7
-    const shots = s.medals.includes('blue')
-      ? [
-          { id: id(), x: playerState.x - BLUE_SPREAD, y },
-          { id: id(), x: playerState.x + BLUE_SPREAD, y },
-        ]
-      : [{ id: id(), x: playerState.x, y }]
+    // Lanes the forks come out of: drummer = two sticks, blue pick doubles, singers = one set each.
+    let lanes = power === 'redoble' ? [-DRUM_SPREAD, DRUM_SPREAD] : [0]
+    if (s.medals.includes('blue')) lanes = lanes.flatMap((o) => [o - BLUE_SPREAD, o + BLUE_SPREAD])
+    if (power === 'oihua') lanes = lanes.flatMap((o) => [o - DUO_GAP, o + DUO_GAP])
+    const shots = lanes.map((o) => ({ id: id(), x: playerState.x + o, y }))
     sfx.shoot(s.medals)
     set({ lastShot: now, playerShots: [...s.playerShots, ...shots] })
   },
@@ -244,6 +289,7 @@ export const useGame = create<State>((set, get) => ({
     const s = get()
     const now = performance.now()
     if (s.gameOver || s.paused || s.screen !== 'game' || now < s.umbrellaReadyAt) return
+    if (powerOf() === 'redoble') return kick()
     const run = s.runId
     vibrate(15)
     sfx.umbrella()
@@ -257,6 +303,7 @@ export const useGame = create<State>((set, get) => ({
     const s = get()
     const now = performance.now()
     if (s.gameOver || s.paused || s.screen !== 'game' || now < s.jumpReadyAt) return
+    if (powerOf() === 'oihua') return scream()
     vibrate(30)
     sfx.loop()
     set({ jumpStart: now, jumpReadyAt: now + JUMP_CHARGE_MS })
@@ -304,10 +351,12 @@ export const useGame = create<State>((set, get) => ({
     const removed =
       source === 'food' ? { enemyShots: s.enemyShots.filter((e) => e.id !== shotId) } : { cookies: s.cookies.filter((c) => c.id !== shotId) }
     const now = performance.now()
-    if (s.gameOver || now < s.invulnUntil) return set(removed)
+    if (s.gameOver || s.ending || now < s.invulnUntil) return set(removed)
 
-    // Every 2 hits while holding medals, the most recently earned one is lost.
-    if (s.medals.length) {
+    set({ streak: 0 })
+    // Every 2 hits while holding medals, the most recently earned one is lost (not the wildcard's
+    // instruments: those stay until he picks another one).
+    if (s.medals.length && powerOf() !== 'komodin') {
       const medalHits = s.medalHits + 1
       if (medalHits >= HITS_PER_MEDAL_LOSS) {
         const lost = s.medals[s.medals.length - 1]
@@ -317,9 +366,11 @@ export const useGame = create<State>((set, get) => ({
     }
 
     const hits = s.stage + 1
-    if (hits < HITS_PER_LIFE) {
+    if (hits < hitsPerLife()) {
       vibrate(80)
       sfx.hurt()
+      addShake(0.35)
+      flash('hurt')
       return set({
         ...removed,
         stage: hits,
@@ -328,8 +379,10 @@ export const useGame = create<State>((set, get) => ({
       })
     }
 
-    // Third hit: lose a life.
+    // Last hit: lose a life.
     vibrate([120, 60, 200])
+    addShake(0.9)
+    flash('hurt')
     const lives = s.lives - 1
     const explosions = [
       ...s.explosions,
@@ -359,9 +412,10 @@ export const useGame = create<State>((set, get) => ({
     const s = get()
     const b = s.boss
     if (s.gameOver || !b || b.hp <= 0 || !s.playerShots.some((p) => p.id === shotId)) return
+    const def = BOSSES[b.index]
     const hp = b.hp - 1
     const playerShots = s.playerShots.filter((p) => p.id !== shotId)
-    const spark = { id: id(), x, y, colors: ['#ff7eb6', '#8fd3e8', '#ffffff'] }
+    const spark = { id: id(), x, y, colors: [def.colors[0], def.colors[1], '#ffffff'] }
     if (hp > 0) {
       sfx.bossHit()
       return set({ playerShots, boss: { ...b, hp }, score: s.score + SCORE_PER_BOSS_HIT * s.wave, explosions: [...s.explosions, spark] })
@@ -369,35 +423,68 @@ export const useGame = create<State>((set, get) => ({
     // Defeated: big multi-colour blast, bonus, clear its projectiles.
     vibrate([60, 40, 60, 40, 200])
     sfx.bossDeath()
-    const blast = [-1.5, 0, 1.5].map((dx, i) => ({
+    addShake(1.4)
+    flash('white')
+    const blast = [-1.5, 0, 1.5, -0.7, 0.8].map((dx, i) => ({
       id: id(),
       x: x + dx,
-      y: y + (i === 1 ? 0.4 : 0),
-      colors: ['#ff7eb6', '#8fd3e8', '#f4f4f2', '#ffe14d', '#d9963b'],
+      y: y + (i % 2 ? 0.5 : -0.2),
+      colors: [...def.colors, '#ffffff'],
       big: true,
     }))
-    const bonus = bossCfg(b.level).bonus
+    const last = b.index === BOSSES.length - 1
+    const bestBoss = Math.max(s.bestBoss, b.index + 1)
+    if (bestBoss !== s.bestBoss) saveProgress(bestBoss)
+    const now = performance.now()
     set({
       playerShots,
       boss: null,
+      bestBoss,
       cookies: [],
-      enemyShots: s.enemyShots.filter((e) => e.kind !== 'burger'),
-      score: s.score + SCORE_PER_BOSS_HIT * s.wave + bonus,
-      banner: `BURUZAGIA +${bonus}`,
+      enemyShots: s.enemyShots.filter((e) => !e.boss),
+      score: s.score + SCORE_PER_BOSS_HIT * s.wave + def.bonus,
+      // A breather before the next stretch: back in shape.
+      stage: 0,
+      ending: last,
+      banner: `${def.name} KO! +${def.bonus}`,
+      quips: [...s.quips.filter((q) => now - q.at < QUIP_MS), { id: id(), x, y: y - 1, text: `+${def.bonus}`, at: now, kind: 'score' }],
       explosions: [...s.explosions, ...blast],
     })
+    if (!last) return
+    // The whole game is beaten: a chain of explosions where it stood, then cut to the stage.
+    const run = s.runId
+    for (let i = 1; i <= 7; i++) {
+      setTimeout(() => {
+        const e = get()
+        if (e.runId !== run || !e.ending) return
+        sfx.explode()
+        addShake(0.5)
+        if (i === 7) flash('white')
+        const boom = { id: id(), x: x + (Math.random() - 0.5) * 5, y: y + (Math.random() - 0.5) * 3, colors: [...def.colors, '#ffffff'], big: i % 2 === 0 }
+        set({ explosions: [...e.explosions, boom] })
+      }, (i * (ENDING_MS - 300)) / 7)
+    }
+    setTimeout(() => {
+      const e = get()
+      if (e.runId !== run || e.screen !== 'game' || !e.ending) return
+      const newRecord = e.score > e.highScore
+      if (newRecord) saveHighScore(e.score)
+      sfx.victory()
+      set({ won: true, gameOver: true, ending: false, newRecord, highScore: Math.max(e.score, e.highScore), enemyShots: [], cookies: [], pickups: [] })
+    }, ENDING_MS)
   },
 
-  bossFire: (x, y) => {
+  bossFire: (shots) => {
     const s = get()
     if (s.gameOver || !s.boss) return
-    set({ enemyShots: [...s.enemyShots, { id: id(), x, y, kind: 'burger', speed: bossCfg(s.boss.level).coneSpeed }] })
+    const { kind, speed } = BOSSES[s.boss.index].light
+    set({ enemyShots: [...s.enemyShots, ...shots.map((p) => ({ id: id(), kind, speed, boss: true, ...p }))] })
   },
 
   cookieFire: (x, y) => {
     const s = get()
     if (s.gameOver || !s.boss) return
-    const speed = bossCfg(s.boss.level).cookieSpeed
+    const speed = BOSSES[s.boss.index].heavy.speed
     // Aim roughly at the player.
     const vx = Math.max(-2, Math.min(2, (playerState.x - x) * 0.25))
     set({ cookies: [...s.cookies, { id: id(), x, y, vx, speed }] })
@@ -416,24 +503,61 @@ export const useGame = create<State>((set, get) => ({
 
   killEnemy: (enemyId, shotId, x, y) => {
     const s = get()
-    if (!s.enemies.some((e) => e.id === enemyId) || !s.playerShots.some((p) => p.id === shotId)) return
+    const shot = s.playerShots.find((p) => p.id === shotId)
+    if (!s.enemies.some((e) => e.id === enemyId) || !shot) return
+    const power = powerOf()
+    const streak = s.streak + 1
+    const extra: ForkShot[] = []
+    let banner = s.banner
+    // Guitarist: a solo every SOLO_EVERY fans in a row.
+    if (power === 'solo' && streak % SOLO_EVERY === 0) {
+      for (const deg of SOLO_FAN) {
+        const a = (deg * Math.PI) / 180
+        extra.push({ id: id(), x: playerState.x, y: field.playerY + 0.7, vx: Math.sin(a) * PLAYER_SHOT_SPEED, vy: Math.cos(a) * PLAYER_SHOT_SPEED })
+      }
+      banner = 'SOLOA!'
+      sfx.solo()
+    }
+    // Rasta: the fork bounces on to the nearest fan (once).
+    if (power === 'reverb' && !shot.chain) {
+      let best: { x: number; y: number } | null = null
+      let bestD = Infinity
+      for (const [eid, p] of liveEnemies) {
+        if (eid === enemyId) continue
+        const d = Math.hypot(p.x - x, p.y - y)
+        if (d < bestD) [best, bestD] = [p, d]
+      }
+      if (best) {
+        const dx = best.x - x
+        const dy = best.y - y
+        const len = Math.hypot(dx, dy) || 1
+        extra.push({ id: id(), x, y, vx: (dx / len) * PLAYER_SHOT_SPEED, vy: (dy / len) * PLAYER_SHOT_SPEED, chain: true })
+      }
+    }
+    // Bassist: forks go straight through.
+    const kept = power === 'grave' ? s.playerShots : s.playerShots.filter((p) => p.id !== shotId)
     vibrate(25)
     sfx.explode()
     sfx.grumble()
     const now = performance.now()
-    const quip = { id: id(), x, y, text: QUIPS[Math.floor(Math.random() * QUIPS.length)], at: now }
+    const points = SCORE_PER_KILL * s.wave
+    const quip: Floater = { id: id(), x, y, text: QUIPS[Math.floor(Math.random() * QUIPS.length)], at: now, kind: 'quip' }
+    const pts: Floater = { id: id(), x, y: y - 0.9, text: `+${points}`, at: now, kind: 'score' }
+    addShake(0.12)
     set({
-      quips: [...s.quips.filter((q) => now - q.at < QUIP_MS), quip],
+      quips: [...s.quips.filter((q) => now - q.at < QUIP_MS), quip, pts],
       enemies: s.enemies.filter((e) => e.id !== enemyId),
-      playerShots: s.playerShots.filter((p) => p.id !== shotId),
-      score: s.score + SCORE_PER_KILL * s.wave,
+      playerShots: [...kept, ...extra],
+      streak,
+      banner,
+      score: s.score + points,
       explosions: [...s.explosions, { id: id(), x, y, colors: ['#f2f2f2', '#b8bcc8', '#ff9a2e', '#ffe14d'] }],
     })
   },
 
   spawnPickup: (kind) => {
     const s = get()
-    if (s.gameOver || s.paused || s.screen !== 'game') return
+    if (s.gameOver || s.ending || s.paused || s.screen !== 'game') return
     const x = (Math.random() * 2 - 1) * (field.halfW - 0.8)
     const speed = kind === 'banana' ? BANANA_SPEED : waveCfg(Math.max(1, s.wave)).shotSpeed * MEDAL_SPEED_FACTOR
     set({ pickups: [...s.pickups, { id: id(), x, y: field.halfH + 1, kind, speed }] })
@@ -457,6 +581,8 @@ export const useGame = create<State>((set, get) => ({
     if (s.medals.includes(p.kind)) {
       return set({ pickups, explosions, score: s.score + SCORE_MEDAL_DUP, banner: `+${SCORE_MEDAL_DUP}` })
     }
+    // Wildcard: each pick is an instrument and he only plays one at a time.
+    if (powerOf() === 'komodin') return set({ pickups, explosions, medals: [p.kind], medalHits: 0, banner: `${INSTRUMENT[p.kind]}!` })
     set({ pickups, explosions, medals: [...s.medals, p.kind], banner: `PUA ${PICK_NAME[p.kind]}!` })
   },
 
@@ -488,6 +614,60 @@ export const QUIP_MS = 1400
 const RAIN_CHANCE = 0.35
 
 const PICK_NAME: Record<MedalKind, string> = { red: 'GORRIA', blue: 'URDINA', yellow: 'HORIA' }
+/** What each pick turns into in the wildcard's hands. */
+export const INSTRUMENT: Record<MedalKind, string> = { red: 'BAXUA', blue: 'GITARRA', yellow: 'BATERIA' }
+
+/** Drummer's bass-drum kick (instead of the umbrella): blasts away all the food close by. */
+function kick() {
+  const s = useGame.getState()
+  const now = performance.now()
+  const near = s.enemyShots.filter((e) => {
+    const p = liveThreats.get(e.id)
+    return p && Math.hypot(p.x - playerState.x, p.y - field.playerY) < KICK_RADIUS
+  })
+  vibrate([10, 30, 60])
+  sfx.kick()
+  addShake(0.55)
+  const ids = new Set(near.map((e) => e.id))
+  useGame.setState({
+    umbrellaReadyAt: now + UMBRELLA_COOLDOWN_MS,
+    enemyShots: s.enemyShots.filter((e) => !ids.has(e.id)),
+    score: s.score + SCORE_PER_DEFLECT * Math.max(1, s.wave) * near.length,
+    explosions: [
+      ...s.explosions,
+      { id: id(), x: playerState.x, y: field.playerY + 0.4, colors: ['#ff7eb6', '#ffe14d', '#ffffff'], big: true },
+      ...near.slice(0, 8).map((e) => {
+        const p = liveThreats.get(e.id)!
+        return { id: id(), x: p.x, y: p.y, colors: ['#ffffff', '#c9ccd2'] }
+      }),
+    ],
+  })
+}
+
+/** The singers' scream (instead of the jump): everything thrown at them is gone, bosses feel it. */
+function scream() {
+  const s = useGame.getState()
+  const now = performance.now()
+  vibrate([40, 30, 120])
+  sfx.scream()
+  addShake(1)
+  flash('white')
+  const pops = [...s.enemyShots, ...s.cookies]
+    .map((e) => liveThreats.get(e.id))
+    .filter((p): p is { x: number; y: number; harmless: boolean } => !!p)
+    .slice(0, 12)
+    .map((p) => ({ id: id(), x: p.x, y: p.y, colors: ['#ff7eb6', '#ffffff'] }))
+  const boss = s.boss && s.boss.hp > 1 ? { ...s.boss, hp: Math.max(1, s.boss.hp - OIHUA_BOSS_DAMAGE) } : s.boss
+  useGame.setState({
+    jumpReadyAt: now + JUMP_CHARGE_MS,
+    enemyShots: [],
+    cookies: [],
+    boss,
+    banner: 'OIHUAAA!',
+    score: s.score + SCORE_PER_DEFLECT * Math.max(1, s.wave) * pops.length,
+    explosions: [...s.explosions, { id: id(), x: playerState.x, y: field.playerY + 1, colors: ['#ff7eb6', '#5ef6ff', '#ffffff'], big: true }, ...pops],
+  })
+}
 
 const MEDAL_SPARK: Record<MedalKind, string> = { red: '#ff3d5a', blue: '#3da5ff', yellow: '#ffe14d' }
 

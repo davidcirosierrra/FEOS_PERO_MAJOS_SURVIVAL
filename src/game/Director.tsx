@@ -5,7 +5,7 @@ import { useGame } from './store'
 export function Director() {
   const remaining = useGame((s) => s.enemies.length + (s.boss ? 1 : 0))
   const wave = useGame((s) => s.wave)
-  const gameOver = useGame((s) => s.gameOver)
+  const gameOver = useGame((s) => s.gameOver || s.ending)
   const banner = useGame((s) => s.banner)
 
   useEffect(() => {

@@ -11,9 +11,10 @@ export default function App() {
   const screen = useGame((s) => s.screen)
   const bossFight = useGame((s) => s.boss != null)
   const gameOver = useGame((s) => s.gameOver)
+  const won = useGame((s) => s.won)
   useEffect(() => {
-    playMusic(screen === 'home' ? 'menu' : gameOver ? null : bossFight ? 'boss' : 'game')
-  }, [screen, bossFight, gameOver])
+    playMusic(screen === 'home' ? 'menu' : won ? 'win' : gameOver ? null : bossFight ? 'boss' : 'game')
+  }, [screen, bossFight, gameOver, won])
   return (
     <main className="app">
       {screen === 'game' ? (
