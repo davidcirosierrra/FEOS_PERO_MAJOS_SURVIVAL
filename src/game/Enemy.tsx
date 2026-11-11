@@ -3,8 +3,8 @@ import { CuboidCollider, RigidBody, type RapierRigidBody } from '@react-three/ra
 import { useRef } from 'react'
 import type * as THREE from 'three'
 import { patternSize } from '../voxel/patterns'
-import { FANS } from '../voxel/theme'
-import { Voxel } from '../voxel/Voxel'
+import { FAN_LEGS, FANS } from '../voxel/theme'
+import { Walker } from '../voxel/Sprite'
 import { Stand } from '../scene/View'
 import { FAN_VOXEL, GROUPS, wave as waveCfg } from './config'
 import { field, useGame, type Enemy as EnemyT } from './store'
@@ -19,6 +19,7 @@ export function Enemy({ e }: { e: EnemyT }) {
   const y = useRef(field.halfH + 2)
   const slotY = useRef(e.slotY)
   const fireIn = useRef(1.2 + Math.random() * 2.5)
+  const walkStep = useRef(0)
   const killEnemy = useGame((s) => s.killEnemy)
 
   useFrame((_, rawDt) => {
@@ -44,6 +45,7 @@ export function Enemy({ e }: { e: EnemyT }) {
     if (visual.current) {
       // Walking wobble.
       const step = Math.sin(t.current * 8 + e.phase)
+      walkStep.current = Math.floor((t.current * 8 + e.phase) / Math.PI) & 1
       visual.current.rotation.z = step * 0.08
       visual.current.rotation.y = Math.sin(t.current * 1.25 + e.phase) * 0.25
       visual.current.position.y = Math.abs(step) * 0.08
@@ -74,7 +76,7 @@ export function Enemy({ e }: { e: EnemyT }) {
       <CuboidCollider args={[(w * FAN_VOXEL) / 2.2, (h * FAN_VOXEL) / 2.2, 0.3]} collisionGroups={GROUPS.enemy} />
       <Stand height={h * FAN_VOXEL}>
         <group ref={visual}>
-          <Voxel pattern={FANS[e.look]} size={FAN_VOXEL} depth={3} />
+          <Walker pattern={FANS[e.look]} legs={FAN_LEGS} size={FAN_VOXEL} depth={3} step={walkStep} />
         </group>
       </Stand>
     </RigidBody>

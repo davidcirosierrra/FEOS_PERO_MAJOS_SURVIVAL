@@ -1,4 +1,4 @@
-import { PLAYABLE, type CharacterId } from './voxel/theme'
+import { PLAYABLE, type CharacterId } from './characters'
 import { create } from 'zustand'
 
 export type Settings = {

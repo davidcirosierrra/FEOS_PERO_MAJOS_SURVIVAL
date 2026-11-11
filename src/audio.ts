@@ -2,6 +2,7 @@
  * Chiptune audio, synthesised with Web Audio (no files): sound effects + a tiny step-sequenced
  * soundtrack. Everything is original. Volumes come from the settings store.
  */
+import { character } from './characters'
 import { useSettings } from './settings'
 
 let ctx: AudioContext | null = null
@@ -149,6 +150,9 @@ function scream(t: number, pig: boolean, long: boolean) {
 
 // ---------------------------------------------------------------- sound effects
 
+/** Does the current character squeal (pig) rather than roar? */
+const squeals = () => character(useSettings.getState().character).voice === 'squeal'
+
 let lastShoot = 0
 export const sfx = {
   shoot: (medals: string[]) =>
@@ -211,11 +215,11 @@ export const sfx = {
   hurt: () =>
     fx((t) => {
       noise(sfxBus, t, 0.08, 0.3, 'lowpass', 1500) // thud
-      scream(t + 0.02, useSettings.getState().character === 'pig', false)
+      scream(t + 0.02, squeals(), false)
     }),
   lifeLost: () =>
     fx((t) => {
-      scream(t, useSettings.getState().character === 'pig', true)
+      scream(t, squeals(), true)
       noise(sfxBus, t, 0.6, 0.6, 'lowpass', 3000, 120)
       ;[523, 392, 311, 233].forEach((f, i) => tone(sfxBus, f, t + i * 0.11, 0.14, 'square', 0.1))
     }),
@@ -251,6 +255,26 @@ export const sfx = {
     fx((t) => {
       for (let i = 0; i < 5; i++) noise(sfxBus, t + i * 0.18, 0.5, 0.55, 'lowpass', 2600, 100)
       ;[60, 64, 67, 72, 76, 79, 84].forEach((n, i) => tone(sfxBus, midi(n), t + 1 + i * 0.08, 0.14, 'square', 0.1))
+    }),
+  /** The whole game beaten: a proper fanfare. */
+  victory: () =>
+    fx((t) => {
+      const lead = [67, 67, 67, 72, 76, 74, 72, 76, 79, 79, 84]
+      const len = [0.12, 0.12, 0.12, 0.3, 0.3, 0.12, 0.12, 0.3, 0.14, 0.14, 0.9]
+      let at = t
+      lead.forEach((n, i) => {
+        tone(sfxBus, midi(n), at, len[i] * 0.95, 'square', 0.11)
+        tone(sfxBus, midi(n - 12), at, len[i] * 0.95, 'triangle', 0.14)
+        tone(sfxBus, midi(n + 7), at, len[i] * 0.9, 'square', 0.04)
+        at += len[i]
+      })
+      for (let i = 0; i < 6; i++) noise(sfxBus, t + 2.1 + i * 0.09, 0.3, 0.12, 'highpass', 6000) // crowd-ish hiss
+    }),
+  /** Boss gets angry. */
+  enrage: () =>
+    fx((t) => {
+      tone(sfxBus, 110, t, 0.5, 'sawtooth', 0.16, 330)
+      noise(sfxBus, t, 0.4, 0.2, 'bandpass', 500, 2500)
     }),
   cookie: () => fx((t) => tone(sfxBus, 140, t, 0.12, 'triangle', 0.3, 70)),
   click: () => fx((t) => tone(sfxBus, 880, t, 0.05, 'square', 0.06)),
@@ -304,7 +328,7 @@ export function rainDrip() {
 // Fast street-punk in the spirit of 80s Basque/Spanish punk (all original riffs): distorted power
 // chords in eighths, driving bass, skank beat (kick/snare alternating on every eighth).
 
-export type Track = 'menu' | 'game' | 'boss'
+export type Track = 'menu' | 'game' | 'boss' | 'win'
 
 type Song = {
   bpm: number
@@ -336,7 +360,9 @@ const SONGS: Record<Track, Song> = {
       83,0,81,0, 79,0,0,0, 81,0,0,0, 83,0,0,0,
     ],
   },
-  // even faster, chromatic and nasty for the bar boss
+  // victory lap: the menu riff, brighter and faster
+  win: { bpm: 176, drums: 'oi', mute: [3, 7], riff: [D, D, G, G, A, A, G, A, D, D, G, G, A, A, D, D] },
+  // even faster, chromatic and nasty for the bosses
   boss: { bpm: 214, drums: 'skank', mute: [1, 3, 5, 7], riff: [A, A, Bb, A, A, A, C, Bb, A, A, Bb, A, F, F, E, E] },
 }
 

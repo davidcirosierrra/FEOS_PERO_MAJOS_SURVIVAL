@@ -229,3 +229,51 @@ export function outlined(p: Pattern, color = '#160c18'): Pattern {
   const out = grid.map((row, y) => row.map((c, x) => (c === '.' && (filled(x + 1, y) || filled(x - 1, y) || filled(x, y + 1) || filled(x, y - 1)) ? '~' : c)))
   return { palette: { ...p.palette, '~': color }, rows: out.map((r) => r.join('')) }
 }
+
+/** Where a character's legs are in its sprite: the bottom `rows`, columns [from, split) and [split, to). */
+export type Legs = { rows: number; from: number; split: number; to: number }
+
+const walkCache = new WeakMap<Pattern, [Pattern, Pattern]>()
+/**
+ * Two-frame walk cycle derived from a standing sprite: each frame lifts one leg by a pixel.
+ * Cheap, but enough to make everybody look like they are actually walking.
+ */
+export function walkFrames(p: Pattern, legs: Legs): [Pattern, Pattern] {
+  const hit = walkCache.get(p)
+  if (hit) return hit
+  const h = p.rows.length
+  const w = Math.max(...p.rows.map((r) => r.length))
+  const lift = (x0: number, x1: number): Pattern => {
+    const grid = p.rows.map((r) => [...r.padEnd(w, '.')])
+    for (let y = h - legs.rows; y < h; y++) for (let x = x0; x < x1; x++) grid[y][x] = y + 1 < h ? p.rows[y + 1][x] ?? '.' : '.'
+    return { palette: p.palette, rows: grid.map((r) => r.join('')) }
+  }
+  const frames: [Pattern, Pattern] = [lift(legs.from, legs.split), lift(legs.split, legs.to)]
+  walkCache.set(p, frames)
+  return frames
+}
+
+const rasterCache = new WeakMap<Pattern, string>()
+/** Pattern → PNG data URL (1 px per cell; palette colours may carry alpha). For DOM pixel art. */
+export function patternDataURL(p: Pattern): string {
+  const hit = rasterCache.get(p)
+  if (hit) return hit
+  const { w, h } = patternSize(p)
+  const c = document.createElement('canvas')
+  c.width = w
+  c.height = h
+  const g = c.getContext('2d')!
+  const img = g.createImageData(w, h)
+  p.rows.forEach((row, y) =>
+    [...row].forEach((ch, x) => {
+      const hex = p.palette[ch]
+      if (!hex) return
+      const n = (i: number) => parseInt(hex.slice(i, i + 2), 16)
+      img.data.set([n(1), n(3), n(5), hex.length > 7 ? n(7) : 255], (y * w + x) * 4)
+    }),
+  )
+  g.putImageData(img, 0, 0)
+  const url = c.toDataURL()
+  rasterCache.set(p, url)
+  return url
+}

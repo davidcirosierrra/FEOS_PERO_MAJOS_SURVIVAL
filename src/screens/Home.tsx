@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { sfx, unlockAudio } from '../audio'
+import { BOSSES } from '../bosses'
+import { bossPortrait } from '../bosses/portrait'
+import { character as characterOf, PLAYABLE } from '../characters'
 import { ConfigPanel } from '../components/Config'
 import { PixelSprite } from '../components/PixelSprite'
-import { useSettings } from '../settings'
-import { CHARACTERS, PLAYABLE } from '../voxel/theme'
 import { useGame } from '../game/store'
 import { calibrate, input, readTilt, sensorAlive, startInput } from '../input'
+import { useSettings } from '../settings'
 import { pad } from '../storage'
+import type { Pattern } from '../voxel/patterns'
 
 const TITLE_LINES = ['FEOS PERO', 'MAJOS']
 
@@ -49,29 +52,83 @@ function TiltMeter() {
   )
 }
 
-/** Pick who walks to the stage: the bass player or the pink pig. */
+/**
+ * The hero on its spotlight. With more than one playable character the arrows cycle through
+ * them; with a single one it is simply shown off.
+ */
 function CharacterSelect() {
-  const character = useSettings((s) => s.character)
+  const id = useSettings((s) => s.character)
   const set = useSettings((s) => s.set)
+  const who = characterOf(id)
+  const many = PLAYABLE.length > 1
+  const cycle = (d: number) => {
+    unlockAudio()
+    sfx.click()
+    const i = Math.max(0, PLAYABLE.indexOf(who.id))
+    set({ character: PLAYABLE[(i + d + PLAYABLE.length) % PLAYABLE.length] })
+  }
   return (
-    <div className="char-select intro" onPointerDown={(e) => e.stopPropagation()}>
-      {PLAYABLE.map((id) => (
-        <button
-          key={id}
-          className={`char-card ${character === id ? 'on' : ''} ${PLAYABLE.length === 1 ? 'solo' : ''}`}
-          onClick={() => {
-            unlockAudio()
-            sfx.click()
-            set({ character: id })
-          }}
-        >
-          <PixelSprite pattern={CHARACTERS[id].pattern} scale={4} />
-          <span>{CHARACTERS[id].name}</span>
+    <div className="hero intro" onPointerDown={(e) => e.stopPropagation()}>
+      <span className="hero-beam" />
+      {many && (
+        <button className="hero-arrow" aria-label="Aurrekoa" onClick={() => cycle(-1)}>
+          ‹
         </button>
-      ))}
+      )}
+      <div className="hero-figure" key={who.id}>
+        <PixelSprite pattern={who.pattern} scale={4} />
+        <span className="hero-shadow" />
+      </div>
+      {many && (
+        <button className="hero-arrow" aria-label="Hurrengoa" onClick={() => cycle(1)}>
+          ›
+        </button>
+      )}
+      <div className="hero-plate">
+        <b>{who.name}</b>
+        <small>{who.blurb}</small>
+        {many && (
+          <span className="hero-dots">
+            {PLAYABLE.map((p) => (
+              <i key={p} className={p === who.id ? 'on' : ''} />
+            ))}
+          </span>
+        )}
+      </div>
     </div>
   )
 }
+
+/** The six bosses: silhouettes until you have beaten them at least once. */
+function BossGallery() {
+  const best = useGame((s) => s.bestBoss)
+  return (
+    <div className="boss-gallery intro">
+      <span className="label">
+        BURUZAGIAK {Math.min(best, BOSSES.length)}/{BOSSES.length}
+      </span>
+      <div>
+        {BOSSES.map((b, i) => (
+          <img key={b.id} src={bossPortrait(b)} alt={i < best ? b.name : '?'} className={i < best ? 'beaten' : ''} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const ICON_PAL = { w: '#ffffff', p: '#ff7eb6', c: '#5ef6ff', y: '#ffe14d', k: '#1a1020' }
+const ICONS: Record<string, Pattern> = {
+  tilt: { palette: ICON_PAL, rows: ['...ppp...', '...pkp...', 'w..pkp..w', 'ww.pkp.ww', 'w..pkp..w', '...pkp...', '...ppp...'] },
+  tap: { palette: ICON_PAL, rows: ['..yyy..', '.y...y.', 'y..w..y', 'y.www.y', 'y..w..y', '.y...y.', '..yyy..'] },
+  up: { palette: ICON_PAL, rows: ['...c...', '..ccc..', '.ccccc.', 'ccccccc', '..ccc..', '..ccc..', '..ccc..'] },
+  down: { palette: ICON_PAL, rows: ['..ppp..', '..ppp..', '..ppp..', 'ppppppp', '.ppppp.', '..ppp..', '...p...'] },
+}
+const HOW: [string, string, string][] = [
+  ['tilt', 'MAKURTU', 'MUGITU'],
+  ['tap', 'UKITU', 'TIRO'],
+  ['up', 'GORA', 'JAUZIA'],
+  ['down', 'BEHERA', 'ATERKIA'],
+]
 
 export function Home() {
   const hi = useGame((s) => s.highScore)
@@ -97,13 +154,19 @@ export function Home() {
         void startInput(true)
       }}
     >
+      <div className="beams" aria-hidden>
+        <i />
+        <i />
+        <i />
+      </div>
+
       <div className="title-block">
         <h1 className="title" aria-label="Feos pero majos">
           {TITLE_LINES.map((line, l) => (
             <span key={l} className="title-line">
               {[...line].map((ch, i) => (
                 <span key={i} style={{ animationDelay: `${0.2 + (l * 9 + i) * 0.07}s` }}>
-                  {ch === ' ' ? '\u00a0' : ch}
+                  {ch === ' ' ? ' ' : ch}
                 </span>
               ))}
             </span>
@@ -133,14 +196,17 @@ export function Home() {
       </div>
 
       <div className="menu-info intro">
+        <BossGallery />
+        <div className="how">
+          {HOW.map(([icon, a, b]) => (
+            <div key={icon} className="how-card">
+              <PixelSprite pattern={ICONS[icon]} scale={2} />
+              <span>{a}</span>
+              <b>{b}</b>
+            </div>
+          ))}
+        </div>
         <TiltMeter />
-        <p>MAKURTU MUGITZEKO</p>
-        <p>UKITU TIRO EGITEKO</p>
-        <p>GORA LERRATU: JAUZIA</p>
-        <p>BEHERA LERRATU: ATERKIA</p>
-        <p className="dim">3 KOLPE = TXANDA 1</p>
-        <p className="dim">PUAK: GORRIA ZULATU</p>
-        <p className="dim">URDINA x2 · HORIA AZKAR</p>
       </div>
       {config && <ConfigPanel onClose={() => setConfig(false)} />}
     </div>

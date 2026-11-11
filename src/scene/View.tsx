@@ -4,7 +4,8 @@ import * as THREE from 'three'
 import { jumpPose } from '../game/jump'
 import { field, liveThreats, playerState, useGame } from '../game/store'
 import { useSettings } from '../settings'
-import { RIFLE_BASSIST, RIFLE_PIG } from '../voxel/sprites.gen'
+import { character as characterOf } from '../characters'
+import { fx } from '../game/fx'
 import { Voxel } from '../voxel/Voxel'
 import { CAMERA_Z, FOV } from './PixelCanvas'
 import { Scenery } from './Scenery'
@@ -83,14 +84,22 @@ export function CameraRig() {
   }, [eyes, camera])
 
   useFrame((state, dt) => {
-    if (!eyes) return
+    // Screen shake (hits, explosions): a decaying random offset, snapped to whole render pixels.
+    fx.shake *= Math.exp(-dt * 7)
+    if (fx.shake < 0.01) fx.shake = 0
+    const sx = fx.shake ? (Math.random() * 2 - 1) * fx.shake * 0.5 : 0
+    const sy = fx.shake ? (Math.random() * 2 - 1) * fx.shake * 0.5 : 0
+    if (!eyes) {
+      camera.position.set(sx, sy, CAMERA_Z)
+      return
+    }
     const s = useGame.getState()
     const now = performance.now()
     const pose = jumpPose(now, s.jumpStart, playerState.x)
     const arc = pose ? pose.z / 9 : 0 // 0..1
     const bob = Math.abs(Math.sin(state.clock.elapsedTime * 9)) * 0.05
     camera.up.copy(UP_EYES)
-    camera.position.set(playerState.x, field.playerY - BACK, EYE + bob + arc * 2.6)
+    camera.position.set(playerState.x + sx * 0.3, field.playerY - BACK, EYE + bob + arc * 2.6 + sy * 0.3)
     _look.set(playerState.x, field.playerY + 30, -5)
     camera.lookAt(_look)
     // Jump = barrel roll around the view direction.
@@ -125,7 +134,7 @@ export function CameraRig() {
       <fog attach="fog" args={['#2a1a30', 14, 40]} />
       <Scenery />
       <group ref={rifle}>
-        <Voxel pattern={character === 'pig' ? RIFLE_PIG : RIFLE_BASSIST} size={0.012} depth={3} />
+        <Voxel pattern={characterOf(character).rifle} size={0.012} depth={3} />
       </group>
     </>
   )

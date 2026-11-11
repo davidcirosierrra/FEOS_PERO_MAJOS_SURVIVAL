@@ -20,8 +20,9 @@ export function QuipProjector() {
       const k = (now - q.at) / QUIP_MS
       if (k > 1) continue
       // top view: rises on screen; first person: above the fan's head
-      if (eyes) _v.set(q.x, q.y, 1.9 + k * 0.6)
-      else _v.set(q.x, q.y + 0.9 + k * 0.8, 0)
+      const rise = q.kind === 'score' ? 0.2 + k * 1.4 : 0.9 + k * 0.8
+      if (eyes) _v.set(q.x, q.y, (q.kind === 'score' ? 1.2 : 1.9) + k * 0.6)
+      else _v.set(q.x, q.y + rise, 0)
       _v.project(camera)
       if (_v.z > 1) continue
       screenPos.set(q.id, { x: ((_v.x + 1) / 2) * size.width, y: ((1 - _v.y) / 2) * size.height, k })
@@ -30,7 +31,7 @@ export function QuipProjector() {
   return null
 }
 
-/** Overlay: comic speech bubbles with the fans' complaints. */
+/** Overlay: comic speech bubbles with the fans' complaints, and score pop-ups. */
 export function Quips() {
   const quips = useGame((s) => s.quips)
   const refs = useRef(new Map<number, HTMLDivElement>())
@@ -56,7 +57,7 @@ export function Quips() {
       {quips.map((q) => (
         <div
           key={q.id}
-          className="quip"
+          className={q.kind === 'score' ? 'score-pop' : 'quip'}
           ref={(el) => {
             if (el) refs.current.set(q.id, el)
             else refs.current.delete(q.id)

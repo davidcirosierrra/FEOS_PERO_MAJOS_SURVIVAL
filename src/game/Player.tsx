@@ -5,8 +5,8 @@ import type * as THREE from 'three'
 import { readTilt } from '../input'
 import { useSettings } from '../settings'
 import { patternSize } from '../voxel/patterns'
-import { CHARACTERS } from '../voxel/theme'
-import { Voxel } from '../voxel/Voxel'
+import { character as characterOf } from '../characters'
+import { Walker } from '../voxel/Sprite'
 import { BASE_DAMPING, CHAR_VOXEL, GROUPS, STAGE_WIDTH, STAGES, THRUST } from './config'
 import { jumpPose } from './jump'
 import { field, playerState, useGame } from './store'
@@ -25,7 +25,9 @@ export function Player() {
 
   // Initial position only: stable reference so re-renders (hits, banana) never re-apply it.
   const spawn = useMemo(() => [0, field.playerY, 0] as [number, number, number], [])
-  const pattern = CHARACTERS[character].pattern
+  const who = characterOf(character)
+  const pattern = who.pattern
+  const walkStep = useRef(0)
   const { w, h } = patternSize(pattern)
   // Every hit makes the character fatter (wider and heavier).
   const halfW = (w * CHAR_VOXEL * STAGE_WIDTH[stage]) / 2
@@ -48,7 +50,7 @@ export function Player() {
   useBeforePhysicsStep(() => {
     const b = body.current
     if (!b || useGame.getState().gameOver) return
-    b.applyImpulse({ x: readTilt() * THRUST * PHYSICS_DT, y: 0, z: 0 }, true)
+    b.applyImpulse({ x: readTilt() * THRUST * (who.stats?.thrust ?? 1) * PHYSICS_DT, y: 0, z: 0 }, true)
   })
 
   useFrame((state) => {
@@ -68,6 +70,8 @@ export function Player() {
     const pose = jumpPose(now, jumpStart, p.x)
     // Walking: little bounce and sway; leans into the direction it's moving.
     const step = Math.sin(t * 9)
+    // Legs move faster the faster it runs sideways.
+    walkStep.current = Math.floor((t * (9 + Math.min(6, Math.abs(vx) * 1.5))) / Math.PI) % 2
     if (pose) {
       v.position.set(pose.x, pose.y, pose.z)
       v.rotation.x = pose.flip
@@ -111,7 +115,7 @@ export function Player() {
       />
       <group ref={visual}>
         <group ref={fat}>
-          <Voxel pattern={pattern} size={CHAR_VOXEL} depth={3} />
+          <Walker pattern={pattern} legs={who.legs} size={CHAR_VOXEL} depth={3} step={walkStep} />
         </group>
       </group>
     </RigidBody>

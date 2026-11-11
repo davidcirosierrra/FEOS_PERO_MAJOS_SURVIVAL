@@ -2,35 +2,17 @@
  * "Feos pero majos" theme: the band walking to the stage through a crowd of fans.
  * All sprites are pixel patterns ('.' = empty).
  */
-import { outlined, type MedalKind, type Pattern } from './patterns'
+import { BOSS_SHOTS } from './bosses.gen'
+import { outlined, type Legs, type MedalKind, type Pattern } from './patterns'
 import * as G from './sprites.gen'
-
-const BASSIST = G.BASSIST
-const PIG = G.PIG
-
-export type CharacterId = 'bassist' | 'pig'
-
-const crop = (p: Pattern, r0: number, r1: number, c0: number, c1: number): Pattern => ({
-  palette: p.palette,
-  rows: p.rows.slice(r0, r1).map((r) => r.slice(c0, c1)),
-})
-
-/**
- * Characters you can currently pick. The bass player is kept (sprite, rifle, scream) but parked:
- * add 'bassist' back here to bring the character select back.
- */
-export const PLAYABLE: CharacterId[] = ['pig']
-
-export const CHARACTERS: Record<CharacterId, { name: string; pattern: Pattern; head: Pattern }> = {
-  bassist: { name: 'BAXU-JOTZAILEA', pattern: BASSIST, head: crop(BASSIST, 0, 20, 5, 19) },
-  pig: { name: 'TXERRIA', pattern: PIG, head: crop(PIG, 0, 14, 3, 19) },
-}
 
 /** Fans walking towards the band (front view). */
 export const FANS: Pattern[] = [G.FAN_METAL, G.FAN_BANDTEE, G.FAN_TOURIST, G.FAN_PUNK]
+/** All fans share the same build. */
+export const FAN_LEGS: Legs = { rows: 7, from: 4, split: 9, to: 14 }
 
-/** What fans throw at the band. `burger` is reserved for the bar boss. */
-export const THROWN: Record<string, Pattern> = { lighter: G.LIGHTER, cd: G.CD, wine: G.WINE, burger: G.BURGER }
+/** Everything that can be thrown at the band: by fans (`FAN_THROWS`) and by the bosses. */
+export const THROWN: Record<string, Pattern> = { lighter: G.LIGHTER, cd: G.CD, wine: G.WINE, burger: G.BURGER, ...BOSS_SHOTS }
 export const FAN_THROWS = ['lighter', 'cd', 'wine']
 
 /** Pink fork bullets. */

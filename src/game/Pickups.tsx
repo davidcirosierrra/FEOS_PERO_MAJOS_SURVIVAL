@@ -4,6 +4,7 @@ import { memo, useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { MEDAL_COLORS, type Pattern } from '../voxel/patterns'
 import { KALIMOTXO, PICKS } from '../voxel/theme'
+import { Shadow } from '../voxel/Sprite'
 import { Voxel } from '../voxel/Voxel'
 import { FLY_Z, Stand } from '../scene/View'
 import { BANANA_EVERY_MS, GROUPS, MEDAL_EVERY_MS } from './config'
@@ -89,6 +90,7 @@ const Pickup = memo(function Pickup({ p }: { p: PickupT }) {
       <group ref={item}>
         <Voxel pattern={look.pattern} size={look.size} depth={3} basic />
       </group>
+      <Shadow pattern={look.pattern} size={look.size} offset={0.35} />
       <mesh ref={ring}>
         <torusGeometry args={[0.85, 0.05, 4, 20]} />
         <meshBasicMaterial color={look.ring} />

@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
+import { BOSS_EVERY } from '../game/config'
 import { field, useGame } from '../game/store'
 import type { Pattern } from '../voxel/patterns'
 import { ROOF_TILE, STAGE, WALL_TILE } from '../voxel/sprites.gen'
@@ -107,7 +108,7 @@ function Roofs({ speed }: { speed: number }) {
 const STAGE_W = 30
 const STAGE_H = (STAGE_W * 76) / 160
 
-/** The concert stage at the end of the street; it gets closer level by level (resets every 10). */
+/** The concert stage at the end of the street; it gets closer level by level (resets after every boss). */
 function Stage() {
   const tex = useMemo(() => patternTexture(STAGE), [])
   const ref = useRef<THREE.Mesh>(null)
@@ -115,7 +116,7 @@ function Stage() {
     const m = ref.current
     if (!m) return
     const wave = Math.max(1, useGame.getState().wave)
-    const p = ((wave - 1) % 10) / 9
+    const p = ((wave - 1) % BOSS_EVERY) / (BOSS_EVERY - 1)
     const target = 78 - p * 38
     m.position.y += (target - m.position.y) * Math.min(1, dt * 0.8)
   })
